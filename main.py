@@ -4,112 +4,22 @@ import torchvision
 from torchvision.models.detection import (
     fasterrcnn_resnet50_fpn_v2,
     FasterRCNN_ResNet50_FPN_V2_Weights,
+    retinanet_resnet50_fpn_v2,
+    RetinaNet_ResNet50_FPN_V2_Weights,
+    w,
 )
 from PIL import Image
 import torchvision.transforms as T
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import json
 
-# model = YOLO("./models/yolo12n.pt")
+# Load COCO class names
+with open("coco_classnames.json") as f:
+    coco_classnames = json.load(f)
 
-# results = model("./assets/test.jpg")
-
-# for result in results:
-#     result.show()
-
-COCO_INSTANCE_CATEGORY_NAMES = [
-    "__background__",
-    "person",
-    "bicycle",
-    "car",
-    "motorcycle",
-    "airplane",
-    "bus",
-    "train",
-    "truck",
-    "boat",
-    "traffic light",
-    "fire hydrant",
-    "N/A",
-    "stop sign",
-    "parking meter",
-    "bench",
-    "bird",
-    "cat",
-    "dog",
-    "horse",
-    "sheep",
-    "cow",
-    "elephant",
-    "bear",
-    "zebra",
-    "giraffe",
-    "N/A",
-    "backpack",
-    "umbrella",
-    "N/A",
-    "N/A",
-    "handbag",
-    "tie",
-    "suitcase",
-    "frisbee",
-    "skis",
-    "snowboard",
-    "sports ball",
-    "kite",
-    "baseball bat",
-    "baseball glove",
-    "skateboard",
-    "surfboard",
-    "tennis racket",
-    "bottle",
-    "N/A",
-    "wine glass",
-    "cup",
-    "fork",
-    "knife",
-    "spoon",
-    "bowl",
-    "banana",
-    "apple",
-    "sandwich",
-    "orange",
-    "broccoli",
-    "carrot",
-    "hot dog",
-    "pizza",
-    "donut",
-    "cake",
-    "chair",
-    "couch",
-    "potted plant",
-    "bed",
-    "N/A",
-    "dining table",
-    "N/A",
-    "N/A",
-    "toilet",
-    "N/A",
-    "tv",
-    "laptop",
-    "mouse",
-    "remote",
-    "keyboard",
-    "cell phone",
-    "microwave",
-    "oven",
-    "toaster",
-    "sink",
-    "refrigerator",
-    "N/A",
-    "book",
-    "clock",
-    "vase",
-    "scissors",
-    "teddy bear",
-    "hair drier",
-    "toothbrush",
-]
+# Invert the dictionary to map indices to class names
+COCO_INSTANCE_CATEGORY_NAMES = {v: k for k, v in coco_classnames.items()}
 
 image_path = "./assets/test.jpg"
 image = Image.open(image_path).convert("RGB")
@@ -119,8 +29,11 @@ transform = T.Compose([T.ToTensor()])
 image_tensor = transform(image).unsqueeze(0)  # Add batch dimension
 
 # Perform object detection
-model = fasterrcnn_resnet50_fpn_v2(
-    pretrained=True, weights=FasterRCNN_ResNet50_FPN_V2_Weights.DEFAULT
+# model = fasterrcnn_resnet50_fpn_v2(
+#     pretrained=True, weights=FasterRCNN_ResNet50_FPN_V2_Weights.DEFAULT
+# )
+model = retinanet_resnet50_fpn_v2(
+    pretrained=True, weights=RetinaNet_ResNet50_FPN_V2_Weights.DEFAULT
 )
 model.eval()  # Set the model to evaluation mode
 
