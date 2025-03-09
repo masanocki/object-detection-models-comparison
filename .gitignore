@@ -168,4 +168,9 @@ cython_debug/
 #.idea/
 
 # PyPI configuration file
+
+# My Project
 .pypirc
+dataset/
+annotations/
+models/
