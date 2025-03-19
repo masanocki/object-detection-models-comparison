@@ -1,6 +1,37 @@
 {
-    "model": "yolo11n.pt",
-    "model_name": "YOLO",
-    "model_version": "v11",
-    "model_description": "xdd"       
-}
+    "YOLOv11": {
+        "model_name": "YOLOv11",
+        "model_version": "v11 640x640",
+        "model_description": "YOLOv11 is a fast and accurate object detection model optimized for real-time applications."
+    },
+    "YOLOv12": {
+        "model_name": "YOLOv12",
+        "model_version": "v12 640x640",
+        "model_description": "YOLOv12 improves upon YOLOv11 with enhanced accuracy and better handling of small objects."
+    },
+    "SSD": {
+        "model_name": "SSD",
+        "model_version": "ResNet50 V1 FPN 640x640",
+        "model_description": "SSD (Single Shot Detector) is a lightweight model designed for efficient object detection."
+    },
+    "FasterRCNN": {
+        "model_name": "FasterRCNN",
+        "model_version": "ResNet101 V1 640x640",
+        "model_description": "Faster R-CNN is a highly accurate object detection model suitable for complex tasks."
+    },
+    "EfficientDet": {
+        "model_name": "EfficientDet",
+        "model_version": "D1 640x640",
+        "model_description": "EfficientDet is a scalable and efficient object detection model optimized for performance."
+    },
+    "DETR": {
+        "model_name": "DETR",
+        "model_version": "v1 640x640",
+        "model_description": "DETR (DEtection TRansformer) is a transformer-based model for end-to-end object detection."
+    },
+    "RetinaNet": {
+        "model_name": "RetinaNet",
+        "model_version": "ResNet50 FPN 640x640",
+        "model_description": "RetinaNet is a one-stage object detection model known for its focus on handling class imbalance."
+    }
+} 
