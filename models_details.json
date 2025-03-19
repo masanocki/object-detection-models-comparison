@@ -1,0 +1,6 @@
+{
+    "model": "yolo11n.pt",
+    "model_name": "YOLO",
+    "model_version": "v11",
+    "model_description": "xdd"       
+}

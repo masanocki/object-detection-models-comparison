@@ -1,17 +1,6 @@
-import random
-import sys
-import time
-
-import tkinter as tk
-from io import StringIO
-from threading import Thread
-
-from tkinter import ttk
-
 import customtkinter as ctk
 from customtkinter import filedialog
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from PIL import Image
+from functions import set_model_details
 
 ctk.set_appearance_mode("system")
 ctk.set_default_color_theme("themes/rime.json")
@@ -27,13 +16,21 @@ class GUI(ctk.CTk):
 
     def load_model_and_files_screen(self):
 
+        # MODEL VARIABLES
+        self.model_path = ctk.StringVar()
+        self.model_path.set("")
+        self.model_name = ctk.StringVar()
+        self.model_name.set("None")
+        self.model_version = ctk.StringVar()
+        self.model_version.set("None")
+        self.model_description = ctk.StringVar()
+        self.model_description.set("None")
+
+        # MODEL LOAD BOX
         self.model_load_box = ctk.CTkFrame(
             self, corner_radius=20, border_width=1, border_color="black"
         )
-        self.model_load_box.place(relx=0.01, rely=0.01, relwidth=0.5, relheight=0.5)
-
-        self.model_path = ctk.StringVar()
-        self.model_path.set("")
+        self.model_load_box.place(relx=0.01, rely=0.01, relwidth=0.49, relheight=0.5)
 
         self.model_label = ctk.CTkLabel(
             self.model_load_box,
@@ -42,13 +39,16 @@ class GUI(ctk.CTk):
         )
         self.model_label.pack(pady=(30, 5), padx=30, anchor="w")
 
-        self.model_entry = ctk.CTkEntry(
+        self.model_selection_list = ctk.CTkOptionMenu(
             self.model_load_box,
-            textvariable=self.model_path,
-            height=40,
+            values=["None", "YOLOv11", "YOLOv12", "SSD", "FasterRCNN", "EfficientDet"],
             corner_radius=15,
+            height=40,
+            font=ctk.CTkFont(size=15),
+            dropdown_font=ctk.CTkFont(size=15),
+            command=set_model_details,
         )
-        self.model_entry.pack(pady=10, padx=30, fill="x")
+        self.model_selection_list.pack(pady=10, padx=30, fill="x")
 
         self.model_details_label = ctk.CTkLabel(
             self.model_load_box,
@@ -69,7 +69,9 @@ class GUI(ctk.CTk):
             row=0, column=0, padx=(20, 10), pady=(10, 0), sticky="w"
         )
         self.model_name_value = ctk.CTkLabel(
-            self.model_details_box, text="None", font=ctk.CTkFont(size=15)
+            self.model_details_box,
+            textvariable=self.model_name,
+            font=ctk.CTkFont(size=15),
         )
         self.model_name_value.grid(row=0, column=1, pady=(10, 0), sticky="w")
 
@@ -80,7 +82,9 @@ class GUI(ctk.CTk):
         )
         self.model_version_label.grid(row=1, column=0, padx=(20, 10), sticky="w")
         self.model_version_value = ctk.CTkLabel(
-            self.model_details_box, text="None", font=ctk.CTkFont(size=15)
+            self.model_details_box,
+            textvariable=self.model_version,
+            font=ctk.CTkFont(size=15),
         )
         self.model_version_value.grid(row=1, column=1, sticky="w")
 
@@ -93,7 +97,9 @@ class GUI(ctk.CTk):
             row=2, column=0, sticky="w", padx=(20, 10), pady=(0, 10)
         )
         self.model_description_value = ctk.CTkLabel(
-            self.model_details_box, text="None", font=ctk.CTkFont(size=15)
+            self.model_details_box,
+            textvariable=self.model_description,
+            font=ctk.CTkFont(size=15),
         )
         self.model_description_value.grid(row=2, column=1, sticky="w", pady=(0, 10))
 
@@ -102,6 +108,7 @@ class GUI(ctk.CTk):
             text="Browse",
             corner_radius=15,
             height=40,
+            # command=self.browse_model_path,
             font=ctk.CTkFont(size=15, weight="bold"),
         )
         self.browse_button.pack(pady=(0, 30), side="right", padx=(0, 30), anchor="s")
@@ -111,6 +118,11 @@ class GUI(ctk.CTk):
             text="Load Model",
             corner_radius=15,
             height=40,
+            # command=lambda: load_model(self.model_path.get()),
             font=ctk.CTkFont(size=15, weight="bold"),
         )
         self.load_button.pack(pady=(0, 30), side="right", padx=30, anchor="s")
+
+        # FILES LOAD BOX
+        self.files_load_box = ctk.CTkFrame(self, corner_radius=20, fg_color="red")
+        self.files_load_box.place(relx=0.51, rely=0.01, relwidth=0.48, relheight=0.98)
