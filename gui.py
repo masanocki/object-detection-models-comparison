@@ -1,7 +1,8 @@
 import customtkinter as ctk
 from customtkinter import filedialog
-from functions import set_model_details
+from loaders import *
 from CTkScrollableDropdown import *
+from pandastable import Table
 
 ctk.set_appearance_mode("system")
 ctk.set_default_color_theme("themes/rime.json")
@@ -131,6 +132,8 @@ class GUI(ctk.CTk):
 
         # FILES LOAD BOX
         # DIRECTORY VARIABLES
+        self.media_directory_path = ctk.StringVar()
+        self.media_directory_path.set("Directory path")
         self.loaded_sport = ctk.StringVar()
         self.loaded_sport.set("None")
         self.media_type = ctk.StringVar()
@@ -282,16 +285,18 @@ class GUI(ctk.CTk):
         )
         self.media_preview_label.place(relx=0.5, rely=0.5, anchor="center")
 
-        self.file_list_frame = ctk.CTkFrame(self.files_load_box, fg_color="black")
+        self.file_list_frame = ctk.CTkFrame(self.files_load_box)
         self.file_list_frame.place(
             relx=0.5, rely=0.67, relwidth=0.99, relheight=0.54, anchor="center"
         )
+        self.files_table = Table(self.file_list_frame)
 
         self.directory_path_entry = ctk.CTkEntry(
             self.files_load_box,
             corner_radius=15,
             font=ctk.CTkFont(size=15),
             state="disabled",
+            textvariable=self.media_directory_path,
         )
         self.directory_path_entry.place(relx=0.01, rely=0.98, relwidth=0.8, anchor="sw")
 
@@ -299,7 +304,16 @@ class GUI(ctk.CTk):
             self.files_load_box,
             text="Browse",
             corner_radius=15,
-            command=self.browse_directory,
+            command=lambda: [
+                self.media_directory_path.set(filedialog.askdirectory()),
+                load_media_files(
+                    self.media_directory_path.get(),
+                    self.loaded_sport,
+                    self.media_type,
+                    self.total_files,
+                    self.total_size,
+                ),
+            ],
             font=ctk.CTkFont(size=15, weight="bold"),
         )
         self.browse_directory_button.place(relx=0.98, rely=0.98, anchor="se")
