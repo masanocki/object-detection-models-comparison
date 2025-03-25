@@ -2,7 +2,7 @@ import customtkinter as ctk
 from customtkinter import filedialog
 from loaders import *
 from CTkScrollableDropdown import *
-from pandastable import Table
+from CTkTable import *
 
 ctk.set_appearance_mode("system")
 ctk.set_default_color_theme("themes/rime.json")
@@ -142,6 +142,7 @@ class GUI(ctk.CTk):
         self.total_files.set("0")
         self.total_size = ctk.StringVar()
         self.total_size.set("0 KB")
+        self.loaded_files = []
 
         # FILES VARIABLES
         self.file_name = ctk.StringVar()
@@ -285,11 +286,16 @@ class GUI(ctk.CTk):
         )
         self.media_preview_label.place(relx=0.5, rely=0.5, anchor="center")
 
-        self.file_list_frame = ctk.CTkFrame(self.files_load_box)
-        self.file_list_frame.place(
+        # self.file_list_frame = ctk.CTkFrame(self.files_load_box)
+        # self.file_list_frame.place(
+        #     relx=0.5, rely=0.67, relwidth=0.99, relheight=0.54, anchor="center"
+        # )
+        self.files_table = CTkTable(
+            self.files_load_box, row=5, column=1, orientation="vertical"
+        )
+        self.files_table.place(
             relx=0.5, rely=0.67, relwidth=0.99, relheight=0.54, anchor="center"
         )
-        self.files_table = Table(self.file_list_frame)
 
         self.directory_path_entry = ctk.CTkEntry(
             self.files_load_box,
@@ -312,6 +318,7 @@ class GUI(ctk.CTk):
                     self.media_type,
                     self.total_files,
                     self.total_size,
+                    self.files_table,
                 ),
             ],
             font=ctk.CTkFont(size=15, weight="bold"),

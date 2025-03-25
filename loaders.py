@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import pandas as pd
 
 
 def set_model_details(
@@ -19,7 +20,9 @@ def set_model_details(
         model_description_var.set("None")
 
 
-def load_media_files(dir_path, loaded_sport, media_type, total_files, total_size):
+def load_media_files(
+    dir_path, loaded_sport, media_type, total_files, total_size, files_table
+):
     media_files = []
     total_size_temp = 0
     path = Path(dir_path)
@@ -40,3 +43,9 @@ def load_media_files(dir_path, loaded_sport, media_type, total_files, total_size
         loaded_sport.set(splitted_path[splitted_path_length - 3])
     else:
         loaded_sport.set(splitted_path[splitted_path_length - 2])
+
+    # files_table.configure(row=len(media_files))
+    files_table.update_values([media_files])
+    # print(media_files)
+    # print([media_files])
+    # files_table = ["elo"]
