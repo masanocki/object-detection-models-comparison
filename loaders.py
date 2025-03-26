@@ -37,11 +37,14 @@ def load_media_files(
     splitted_path_length = len(splitted_path)
     row_number = 1
 
+    files_table.update_values([])
+    files_table.edit_row(0, value="File Name", font=ctk.CTkFont(size=17, weight="bold"))
+
     for file in path.iterdir():
         media_files.append(file.name)
-        if row_number <= 20:
+        if row_number <= 20 and file.suffix in [".jpg", ".jpeg", ".avi"]:
             files_table.edit_row(row_number, f"     {file.name}")
-        row_number += 1
+            row_number += 1
         total_size_temp += file.stat().st_size
 
     if media_files[1].endswith(".avi"):
@@ -55,7 +58,9 @@ def load_media_files(
     else:
         loaded_sport.set(splitted_path[splitted_path_length - 2])
 
-    files_table.edit_row(21, value="Loaded first 20 files", anchor="c", hover=False)
+    files_table.edit_row(
+        21, value=f"First {row_number - 1} files", anchor="c", hover=False
+    )
 
 
 def load_file_details(
@@ -69,6 +74,9 @@ def load_file_details(
     preview_label,
 ):
     global current_video_capture, current_after_id
+
+    if cell_file_name == " ":
+        return
 
     stripped_name = cell_file_name.strip()
     path = Path(dir_path) / stripped_name
@@ -100,12 +108,17 @@ def play_video_in_preview_box(video_path, preview_label, width, height):
         if current_video_capture is None:
             return
 
-        _, frame = cap.read()
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        img = Image.fromarray(frame)
-        video_frame = ctk.CTkImage(img, size=(width - 9, height - 9))
-        preview_label.configure(text="", image=video_frame)
-        current_after_id = preview_label.after(30, update_frame)
+        ret, frame = cap.read()
+
+        if ret:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            img = Image.fromarray(frame)
+            video_frame = ctk.CTkImage(img, size=(width - 9, height - 9))
+            preview_label.configure(text="", image=video_frame)
+            current_after_id = preview_label.after(30, update_frame)
+        else:
+            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            current_after_id = preview_label.after(30, update_frame)
 
     update_frame()
 

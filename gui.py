@@ -343,6 +343,9 @@ class GUI(ctk.CTk):
         self.browse_directory_button.place(relx=0.98, rely=0.98, anchor="se")
 
         # SPECIFICATION BOX
+        # SPEC VARIABLES
+        self.enable_visualization_var = ctk.IntVar(value=1)
+
         self.specification_box = ctk.CTkFrame(
             self, corner_radius=20, border_width=1, border_color="black"
         )
@@ -356,3 +359,125 @@ class GUI(ctk.CTk):
             font=ctk.CTkFont(size=22, weight="bold"),
         )
         self.specification_label.pack(pady=(20, 5), padx=(20, 0), anchor="w")
+
+        self.metrics_label = ctk.CTkLabel(
+            self.specification_box,
+            text="Evaluation Metrics",
+            font=ctk.CTkFont(size=17, weight="bold"),
+        )
+        self.metrics_label.pack(padx=(20, 0), pady=10, anchor="w")
+
+        self.metrics_checkboxes_first_row = ctk.CTkFrame(
+            self.specification_box, fg_color="transparent"
+        )
+        self.metrics_checkboxes_first_row.pack(padx=10, fill="x", anchor="w")
+
+        self.metric_precision_checkbox = ctk.CTkCheckBox(
+            self.metrics_checkboxes_first_row,
+            text="Precision",
+            font=ctk.CTkFont(size=15),
+        )
+        self.metric_precision_checkbox.pack(
+            padx=(20, 0), pady=5, anchor="w", side=ctk.LEFT
+        )
+
+        self.metric_recall_checkbox = ctk.CTkCheckBox(
+            self.metrics_checkboxes_first_row, text="Recall", font=ctk.CTkFont(size=15)
+        )
+        self.metric_recall_checkbox.pack(
+            padx=(20, 0), pady=5, anchor="w", side=ctk.LEFT
+        )
+
+        self.metric_f1_checkbox = ctk.CTkCheckBox(
+            self.metrics_checkboxes_first_row,
+            text="F1 Score",
+            font=ctk.CTkFont(size=15),
+        )
+        self.metric_f1_checkbox.pack(padx=(20, 0), pady=5, anchor="w", side=ctk.LEFT)
+
+        self.metric_map_checkbox = ctk.CTkCheckBox(
+            self.metrics_checkboxes_first_row,
+            text="mAP (mean Average Precision)",
+            font=ctk.CTkFont(size=15),
+        )
+        self.metric_map_checkbox.pack(padx=(20, 0), pady=5, anchor="w", side=ctk.LEFT)
+
+        self.metric_iou_checkbox = ctk.CTkCheckBox(
+            self.metrics_checkboxes_first_row,
+            text="IoU (Intersection over Union)",
+            font=ctk.CTkFont(size=15),
+        )
+        self.metric_iou_checkbox.pack(padx=(20, 0), pady=5, anchor="w", side=ctk.LEFT)
+
+        self.metrics_checkboxes_second_row = ctk.CTkFrame(
+            self.specification_box, fg_color="transparent"
+        )
+        self.metrics_checkboxes_second_row.pack(padx=10, fill="x", anchor="w")
+
+        self.metric_detection_time_checkbox = ctk.CTkCheckBox(
+            self.metrics_checkboxes_second_row,
+            text="Detection Time",
+            font=ctk.CTkFont(size=15),
+        )
+        self.metric_detection_time_checkbox.pack(
+            padx=(20, 0), pady=5, anchor="w", side=ctk.LEFT
+        )
+
+        self.metric_fps_checkbox = ctk.CTkCheckBox(
+            self.metrics_checkboxes_second_row,
+            text="FPS (Frames Per Second)",
+            font=ctk.CTkFont(size=15),
+        )
+        self.metric_fps_checkbox.pack(padx=(20, 0), pady=5, anchor="w", side=ctk.LEFT)
+
+        self.visualization_label = ctk.CTkLabel(
+            self.specification_box,
+            text="Visualization",
+            font=ctk.CTkFont(size=17, weight="bold"),
+        )
+        self.visualization_label.pack(padx=(20, 0), pady=(20, 0), anchor="w")
+
+        self.enable_visualization_row = ctk.CTkFrame(
+            self.specification_box, fg_color="transparent"
+        )
+        self.enable_visualization_row.pack(padx=10, fill="x", anchor="w")
+
+        self.enable_visualization_label = ctk.CTkLabel(
+            self.enable_visualization_row,
+            text="Enable visualization during detection: ",
+            font=ctk.CTkFont(size=15),
+        )
+        self.enable_visualization_label.pack(
+            padx=(20, 0), pady=10, anchor="w", side=ctk.LEFT
+        )
+
+        self.enable_visualization_yes_option = ctk.CTkRadioButton(
+            self.enable_visualization_row,
+            text="Yes",
+            value=1,
+            variable=self.enable_visualization_var,
+            font=ctk.CTkFont(size=15),
+        )
+        self.enable_visualization_yes_option.pack(
+            padx=(20, 0), pady=10, anchor="w", side=ctk.LEFT
+        )
+
+        self.enable_visualization_yes_option = ctk.CTkRadioButton(
+            self.enable_visualization_row,
+            text="No",
+            value=0,
+            variable=self.enable_visualization_var,
+            font=ctk.CTkFont(size=15),
+        )
+        self.enable_visualization_yes_option.pack(pady=10, anchor="w", side=ctk.LEFT)
+
+        # DEFAULT STATE: ALL CHECKBOXES ARE SELECTED
+        # IT MEANS THAT ALL METRIC  WILL BE INCLUDED
+        # IN THE TESTING PROCESS
+        self.metric_precision_checkbox.select()
+        self.metric_recall_checkbox.select()
+        self.metric_f1_checkbox.select()
+        self.metric_map_checkbox.select()
+        self.metric_iou_checkbox.select()
+        self.metric_detection_time_checkbox.select()
+        self.metric_fps_checkbox.select()
