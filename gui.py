@@ -176,7 +176,7 @@ class GUI(ctk.CTk):
             textvariable=self.loaded_sport,
             font=ctk.CTkFont(size=15),
         )
-        self.loaded_sport_value.place(relx=0.25, rely=0.06)
+        self.loaded_sport_value.place(relx=0.15, rely=0.06)
 
         self.media_type_label = ctk.CTkLabel(
             self.files_load_box,
@@ -190,7 +190,7 @@ class GUI(ctk.CTk):
             textvariable=self.media_type,
             font=ctk.CTkFont(size=15),
         )
-        self.media_type_value.place(relx=0.25, rely=0.085)
+        self.media_type_value.place(relx=0.15, rely=0.085)
 
         self.total_files_label = ctk.CTkLabel(
             self.files_load_box,
@@ -204,7 +204,7 @@ class GUI(ctk.CTk):
             textvariable=self.total_files,
             font=ctk.CTkFont(size=15),
         )
-        self.total_files_value.place(relx=0.25, rely=0.11)
+        self.total_files_value.place(relx=0.15, rely=0.11)
 
         self.total_size_label = ctk.CTkLabel(
             self.files_load_box,
@@ -218,7 +218,7 @@ class GUI(ctk.CTk):
             textvariable=self.total_size,
             font=ctk.CTkFont(size=15),
         )
-        self.total_size_value.place(relx=0.25, rely=0.135)
+        self.total_size_value.place(relx=0.15, rely=0.135)
 
         self.selected_file_details_label = ctk.CTkLabel(
             self.files_load_box,
@@ -239,7 +239,7 @@ class GUI(ctk.CTk):
             textvariable=self.file_name,
             font=ctk.CTkFont(size=15),
         )
-        self.file_name_value.place(relx=0.25, rely=0.24)
+        self.file_name_value.place(relx=0.15, rely=0.24)
 
         self.file_type_label = ctk.CTkLabel(
             self.files_load_box,
@@ -253,7 +253,7 @@ class GUI(ctk.CTk):
             textvariable=self.file_type,
             font=ctk.CTkFont(size=15),
         )
-        self.file_type_value.place(relx=0.25, rely=0.265)
+        self.file_type_value.place(relx=0.15, rely=0.265)
 
         self.file_size_label = ctk.CTkLabel(
             self.files_load_box,
@@ -267,11 +267,10 @@ class GUI(ctk.CTk):
             textvariable=self.file_size,
             font=ctk.CTkFont(size=15),
         )
-        self.file_size_value.place(relx=0.25, rely=0.29)
+        self.file_size_value.place(relx=0.15, rely=0.29)
 
         self.media_preview_box = ctk.CTkFrame(
             self.files_load_box,
-            corner_radius=20,
             border_width=1,
             border_color="black",
         )
@@ -285,17 +284,35 @@ class GUI(ctk.CTk):
             font=ctk.CTkFont(size=15, weight="bold"),
         )
         self.media_preview_label.place(relx=0.5, rely=0.5, anchor="center")
+        self.media_preview_label.bind(
+            "<Button-1>",
+            lambda event: stop_and_realease_video(self.media_preview_label),
+        )
 
-        # self.file_list_frame = ctk.CTkFrame(self.files_load_box)
-        # self.file_list_frame.place(
-        #     relx=0.5, rely=0.67, relwidth=0.99, relheight=0.54, anchor="center"
-        # )
         self.files_table = CTkTable(
-            self.files_load_box, row=5, column=1, orientation="vertical"
+            self.files_load_box,
+            row=22,
+            column=1,
+            orientation="vertical",
+            anchor="w",
+            values=[["File Name"]],
+            color_phase="vertical",
+            hover=True,
+            command=lambda cell: load_file_details(
+                cell["value"],
+                self.media_directory_path.get(),
+                self.file_name,
+                self.file_type,
+                self.file_size,
+                self.media_preview_box.winfo_width(),
+                self.media_preview_box.winfo_height(),
+                self.media_preview_label,
+            ),
         )
         self.files_table.place(
             relx=0.5, rely=0.67, relwidth=0.99, relheight=0.54, anchor="center"
         )
+        self.files_table.edit_row(0, font=ctk.CTkFont(size=17, weight="bold"))
 
         self.directory_path_entry = ctk.CTkEntry(
             self.files_load_box,
