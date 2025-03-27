@@ -305,6 +305,12 @@ class GUI(ctk.CTk):
                     self.total_files,
                     self.total_size,
                     self.files_table,
+                    self.metric_fps_checkbox,
+                    self.metric_precision_checkbox,
+                    self.metric_recall_checkbox,
+                    self.metric_f1_checkbox,
+                    self.metric_iou_checkbox,
+                    self.metric_map_checkbox,
                 ),
             ],
             font=ctk.CTkFont(size=15, weight="bold"),
@@ -553,10 +559,14 @@ class GUI(ctk.CTk):
             font=ctk.CTkFont(size=15, weight="bold"),
             corner_radius=15,
             command=lambda: start_test(
-                self.model_name.get(), self.media_directory_path.get()
+                self.model_name.get(),
+                self.media_directory_path.get(),
+                self.media_type.get(),
             ),
         )
         self.start_test_button.pack(pady=(40, 0), anchor="s")
+
+        self.select_default_checkboxes()
 
     # endregion
 
