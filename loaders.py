@@ -28,7 +28,18 @@ def set_model_details(
 
 
 def load_media_files(
-    dir_path, loaded_sport, media_type, total_files, total_size, files_table
+    dir_path,
+    loaded_sport,
+    media_type,
+    total_files,
+    total_size,
+    files_table,
+    fps_checkbox,
+    precision_checkbox,
+    recall_checkbox,
+    f1_checkbox,
+    iou_checkbox,
+    map_checkbox,
 ):
     media_files = []
     total_size_temp = 0
@@ -60,6 +71,16 @@ def load_media_files(
 
     files_table.edit_row(
         21, value=f"First {row_number - 1} files", anchor="c", hover=False
+    )
+
+    disable_unused_metrics_checkboxes(
+        fps_checkbox,
+        precision_checkbox,
+        recall_checkbox,
+        f1_checkbox,
+        iou_checkbox,
+        map_checkbox,
+        media_type.get(),
     )
 
 
@@ -140,3 +161,56 @@ def enable_visualization_options(is_enabled, bounding_boxes, confidence, save_vi
     bounding_boxes.configure(state=state)
     confidence.configure(state=state)
     save_viz.configure(state=state)
+
+
+def disable_unused_metrics_checkboxes(
+    fps_checkbox,
+    precision_checkbox,
+    recall_checkbox,
+    f1_checkbox,
+    iou_checkbox,
+    map_checkbox,
+    media_type,
+):
+    if media_type == "videos":
+        if precision_checkbox.cget("state") != ctk.DISABLED:
+            precision_checkbox.deselect()
+            precision_checkbox.configure(state=ctk.DISABLED)
+        if recall_checkbox.cget("state") != ctk.DISABLED:
+            recall_checkbox.deselect()
+            recall_checkbox.configure(state=ctk.DISABLED)
+        if f1_checkbox.cget("state") != ctk.DISABLED:
+            f1_checkbox.deselect()
+            f1_checkbox.configure(state=ctk.DISABLED)
+        if iou_checkbox.cget("state") != ctk.DISABLED:
+            iou_checkbox.deselect()
+            iou_checkbox.configure(state=ctk.DISABLED)
+        if map_checkbox.cget("state") != ctk.DISABLED:
+            map_checkbox.deselect()
+            map_checkbox.configure(state=ctk.DISABLED)
+
+        if fps_checkbox.cget("state") == ctk.DISABLED:
+            fps_checkbox.configure(state=ctk.NORMAL)
+            fps_checkbox.select()
+    elif media_type == "images":
+        if fps_checkbox.cget("state") != ctk.DISABLED:
+            fps_checkbox.deselect()
+            fps_checkbox.configure(state=ctk.DISABLED)
+
+        if precision_checkbox.cget("state") == ctk.DISABLED:
+            precision_checkbox.configure(state=ctk.NORMAL)
+            precision_checkbox.select()
+        if recall_checkbox.cget("state") == ctk.DISABLED:
+            recall_checkbox.configure(state=ctk.NORMAL)
+            recall_checkbox.select()
+        if f1_checkbox.cget("state") == ctk.DISABLED:
+            f1_checkbox.configure(state=ctk.NORMAL)
+            f1_checkbox.select()
+        if iou_checkbox.cget("state") == ctk.DISABLED:
+            iou_checkbox.configure(state=ctk.NORMAL)
+            iou_checkbox.select()
+        if map_checkbox.cget("state") == ctk.DISABLED:
+            map_checkbox.configure(state=ctk.NORMAL)
+            map_checkbox.select()
+    else:
+        return
