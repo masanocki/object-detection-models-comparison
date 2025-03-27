@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from customtkinter import filedialog
 from loaders import *
+from evaluation import *
 from CTkScrollableDropdown import *
 from CTkTable import *
 
@@ -15,21 +16,13 @@ class GUI(ctk.CTk):
         self.title("ModelTester")
         self._state_before_windows_set_titlebar_color = "zoomed"
 
-        self.load_model_and_files_screen()
+        self.configuration_screen()
 
-    def load_model_and_files_screen(self):
+    def configuration_screen(self):
 
-        # MODEL VARIABLES
-        self.model_path = ctk.StringVar()
-        self.model_path.set("")
-        self.model_name = ctk.StringVar()
-        self.model_name.set("None")
-        self.model_version = ctk.StringVar()
-        self.model_version.set("None")
-        self.model_description = ctk.StringVar()
-        self.model_description.set("None")
+        self.initialize_variables()
 
-        # MODEL LOAD BOX
+        # region MODEL_BOX
         self.model_load_box = ctk.CTkFrame(
             self, corner_radius=20, border_width=1, border_color="black"
         )
@@ -67,14 +60,10 @@ class GUI(ctk.CTk):
                     self.model_description,
                 ),
                 self.model_selection_list.set(selected_model),
-                # self.model_selection_list.configure(
-                #     font=ctk.CTkFont(size=15), dropdown_font=ctk.CTkFont(size=15)
-                # ),
             ],
             autocomplete=True,
             button_color="transparent",
             alpha=0.9,
-            # font=ctk.CTkFont(size=15),
         )
 
         self.model_details_label = ctk.CTkLabel(
@@ -129,29 +118,9 @@ class GUI(ctk.CTk):
             font=ctk.CTkFont(size=15),
         )
         self.model_description_value.grid(row=2, column=1, sticky="w", pady=(0, 10))
+        # endregion
 
-        # FILES LOAD BOX
-        # DIRECTORY VARIABLES
-        self.media_directory_path = ctk.StringVar()
-        self.media_directory_path.set("Directory path")
-        self.loaded_sport = ctk.StringVar()
-        self.loaded_sport.set("None")
-        self.media_type = ctk.StringVar()
-        self.media_type.set("None")
-        self.total_files = ctk.StringVar()
-        self.total_files.set("0")
-        self.total_size = ctk.StringVar()
-        self.total_size.set("0 KB")
-        self.loaded_files = []
-
-        # FILES VARIABLES
-        self.file_name = ctk.StringVar()
-        self.file_name.set("None")
-        self.file_type = ctk.StringVar()
-        self.file_type.set("None")
-        self.file_size = ctk.StringVar()
-        self.file_size.set("0 KB")
-
+        # region MEDIA_BOX
         self.files_load_box = ctk.CTkFrame(
             self, corner_radius=20, border_width=1, border_color="black"
         )
@@ -341,11 +310,9 @@ class GUI(ctk.CTk):
             font=ctk.CTkFont(size=15, weight="bold"),
         )
         self.browse_directory_button.place(relx=0.98, rely=0.98, anchor="se")
+        # endregion
 
-        # SPECIFICATION BOX
-        # SPEC VARIABLES
-        self.enable_visualization_var = ctk.IntVar(value=1)
-
+        # region SPEC_BOX
         self.specification_box = ctk.CTkFrame(
             self, corner_radius=20, border_width=1, border_color="black"
         )
@@ -457,23 +424,175 @@ class GUI(ctk.CTk):
             value=1,
             variable=self.enable_visualization_var,
             font=ctk.CTkFont(size=15),
+            command=lambda: enable_visualization_options(
+                self.enable_visualization_var.get(),
+                self.show_bounding_boxes_checkbox,
+                self.show_confidence_scores_checkbox,
+                self.save_visualizations_checkbox,
+            ),
         )
         self.enable_visualization_yes_option.pack(
             padx=(20, 0), pady=10, anchor="w", side=ctk.LEFT
         )
 
-        self.enable_visualization_yes_option = ctk.CTkRadioButton(
+        self.enable_visualization_no_option = ctk.CTkRadioButton(
             self.enable_visualization_row,
             text="No",
             value=0,
             variable=self.enable_visualization_var,
             font=ctk.CTkFont(size=15),
+            command=lambda: enable_visualization_options(
+                self.enable_visualization_var.get(),
+                self.show_bounding_boxes_checkbox,
+                self.show_confidence_scores_checkbox,
+                self.save_visualizations_checkbox,
+            ),
         )
-        self.enable_visualization_yes_option.pack(pady=10, anchor="w", side=ctk.LEFT)
+        self.enable_visualization_no_option.pack(pady=10, anchor="w", side=ctk.LEFT)
 
-        # DEFAULT STATE: ALL CHECKBOXES ARE SELECTED
-        # IT MEANS THAT ALL METRIC  WILL BE INCLUDED
-        # IN THE TESTING PROCESS
+        self.additional_visualization_options = ctk.CTkFrame(
+            self.specification_box, fg_color="transparent"
+        )
+        self.additional_visualization_options.pack(
+            padx=10, pady=(5, 0), fill="x", anchor="w"
+        )
+
+        self.show_bounding_boxes_checkbox = ctk.CTkCheckBox(
+            self.additional_visualization_options,
+            text="Show Bounding Boxes",
+            font=ctk.CTkFont(size=15),
+            state="normal" if self.enable_visualization_var.get() == 1 else "disabled",
+        )
+        self.show_bounding_boxes_checkbox.pack(
+            padx=(20, 0), pady=5, anchor="w", side=ctk.LEFT
+        )
+
+        self.show_confidence_scores_checkbox = ctk.CTkCheckBox(
+            self.additional_visualization_options,
+            text="Show Confidence Scores",
+            font=ctk.CTkFont(size=15),
+            state="normal" if self.enable_visualization_var.get() == 1 else "disabled",
+        )
+        self.show_confidence_scores_checkbox.pack(
+            padx=(20, 0), pady=5, anchor="w", side=ctk.LEFT
+        )
+
+        self.save_visualizations_checkbox = ctk.CTkCheckBox(
+            self.additional_visualization_options,
+            text="Save Visualizations to Disk",
+            font=ctk.CTkFont(size=15),
+            state="normal" if self.enable_visualization_var.get() == 1 else "disabled",
+        )
+        self.save_visualizations_checkbox.pack(
+            padx=(20, 0), pady=5, anchor="w", side=ctk.LEFT
+        )
+
+        self.device_label = ctk.CTkLabel(
+            self.specification_box,
+            text="Select Device:",
+            font=ctk.CTkFont(size=17, weight="bold"),
+        )
+        self.device_label.pack(padx=(20, 0), pady=(20, 0), anchor="w")
+
+        self.device_cpu_option = ctk.CTkRadioButton(
+            self.specification_box,
+            text="CPU",
+            value="CPU",
+            variable=self.device_var,
+            font=ctk.CTkFont(size=15),
+        )
+        self.device_cpu_option.pack(padx=(20, 0), pady=5, anchor="w")
+
+        self.device_gpu_option = ctk.CTkRadioButton(
+            self.specification_box,
+            text="GPU",
+            value="GPU",
+            variable=self.device_var,
+            font=ctk.CTkFont(size=15),
+        )
+        self.device_gpu_option.pack(padx=(20, 0), pady=5, anchor="w")
+        self.results_saving_label = ctk.CTkLabel(
+            self.specification_box,
+            text="Results Saving Options",
+            font=ctk.CTkFont(size=17, weight="bold"),
+        )
+        self.results_saving_label.pack(padx=(20, 0), pady=(20, 0), anchor="w")
+
+        self.auto_save_checkbox = ctk.CTkCheckBox(
+            self.specification_box,
+            text="Automatically save test results",
+            font=ctk.CTkFont(size=15),
+        )
+        self.auto_save_checkbox.pack(padx=(20, 0), pady=5, anchor="w")
+
+        self.save_format_label = ctk.CTkLabel(
+            self.specification_box,
+            text="Save Format:",
+            font=ctk.CTkFont(size=15),
+        )
+        self.save_format_label.pack(padx=(20, 0), pady=5, anchor="w")
+
+        self.save_format_dropdown = ctk.CTkComboBox(
+            self.specification_box,
+            variable=self.save_format_var,
+            font=ctk.CTkFont(size=15),
+        )
+        self.save_format_dropdown.pack(padx=(20, 20), pady=5, fill="x")
+
+        CTkScrollableDropdown(
+            self.save_format_dropdown,
+            values=["CSV", "XLSX"],
+            autocomplete=True,
+            button_color="transparent",
+            alpha=0.9,
+        )
+
+        self.start_test_button = ctk.CTkButton(
+            self.specification_box,
+            text="Start Test",
+            font=ctk.CTkFont(size=15, weight="bold"),
+            corner_radius=15,
+            command=lambda: start_test(
+                self.model_name.get(), self.media_directory_path.get()
+            ),
+        )
+        self.start_test_button.pack(pady=(40, 0), anchor="s")
+
+    # endregion
+
+    # region VARIABLES_INIT
+    def initialize_variables(self):
+        # MODEL VARIABLES
+        self.model_name = ctk.StringVar(value="None")
+        self.model_version = ctk.StringVar(value="None")
+        self.model_description = ctk.StringVar(value="None")
+
+        # DIRECTORY VARIABLES
+        self.media_directory_path = ctk.StringVar(value="Directory path")
+        self.loaded_sport = ctk.StringVar(value="None")
+        self.media_type = ctk.StringVar(value="None")
+        self.total_files = ctk.StringVar(value="0")
+        self.total_size = ctk.StringVar(value="0 KB")
+
+        # FILE VARIABLES
+        self.file_name = ctk.StringVar(value="None")
+        self.file_type = ctk.StringVar(value="None")
+        self.file_size = ctk.StringVar(value="0 KB")
+
+        # SPECIFICATIONS VARIABLES
+        self.enable_visualization_var = ctk.IntVar(value=0)
+        self.save_format_var = ctk.StringVar(value="CSV")
+        self.device_var = ctk.StringVar(value="CPU")
+
+    # endregion
+
+    # region CHCKBOXES_INIT
+    def select_default_checkboxes(self):
+        """
+        DEFAULT STATE: ALL CHECKBOXES ARE SELECTED
+        IT MEANS THAT ALL METRIC WILL BE INCLUDED
+        IN THE TESTING PROCESS
+        """
         self.metric_precision_checkbox.select()
         self.metric_recall_checkbox.select()
         self.metric_f1_checkbox.select()
@@ -481,3 +600,6 @@ class GUI(ctk.CTk):
         self.metric_iou_checkbox.select()
         self.metric_detection_time_checkbox.select()
         self.metric_fps_checkbox.select()
+        self.auto_save_checkbox.select()
+
+    # endregion
