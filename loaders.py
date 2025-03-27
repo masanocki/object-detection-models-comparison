@@ -133,3 +133,10 @@ def stop_and_realease_video(preview_label):
     if current_after_id is not None:
         preview_label.after_cancel(current_after_id)
         current_after_id = None
+
+
+def enable_visualization_options(is_enabled, bounding_boxes, confidence, save_viz):
+    state = ctk.NORMAL if is_enabled == 1 else ctk.DISABLED
+    bounding_boxes.configure(state=state)
+    confidence.configure(state=state)
+    save_viz.configure(state=state)
