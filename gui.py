@@ -48,6 +48,7 @@ class GUI(ctk.CTk):
                 "YOLOv11",
                 "YOLOv12",
                 "SSD",
+                "FasterRCNN",
                 "EfficientDet",
                 "DETR",
                 "RetinaNet",
@@ -562,6 +563,7 @@ class GUI(ctk.CTk):
                 self.model_name.get(),
                 self.media_directory_path.get(),
                 self.media_type.get(),
+                self.device_var.get(),
             ),
         )
         self.start_test_button.pack(pady=(40, 0), anchor="s")
