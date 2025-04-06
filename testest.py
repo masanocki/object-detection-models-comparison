@@ -1,69 +1,74 @@
-from ultralytics import YOLO
-import torch
-import torchvision
-from torchvision.models.detection import (
-    fasterrcnn_resnet50_fpn_v2,
-    FasterRCNN_ResNet50_FPN_V2_Weights,
-    retinanet_resnet50_fpn_v2,
-    RetinaNet_ResNet50_FPN_V2_Weights,
+import cv2
+import tensorflow as tf
+import numpy as np
+
+# Załaduj model MobileNetV2
+model = tf.keras.applications.MobileNetV2(
+    weights="./pretrained_models/mobilenet-v2", input_shape=(224, 224, 3)
 )
-from PIL import Image
-import torchvision.transforms as T
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import json
 
-# Load COCO class names
-with open("coco_classnames.json") as f:
-    coco_classnames = json.load(f)
 
-# Invert the dictionary to map indices to class names
-COCO_INSTANCE_CATEGORY_NAMES = {v: k for k, v in coco_classnames.items()}
+# Funkcja do przetwarzania każdej klatki wideo
+def process_frame(frame):
+    # Zmień rozmiar klatki do 224x224, ponieważ to rozmiar wejścia modelu MobileNetV2
+    resized_frame = cv2.resize(frame, (224, 224))
 
-image_path = "./assets/test.jpg"
-image = Image.open(image_path).convert("RGB")
+    # Przekształć klatkę na tablicę NumPy
+    img_array = np.array(resized_frame)
 
-# Preprocess the image
-transform = T.Compose([T.ToTensor()])
-image_tensor = transform(image).unsqueeze(0)  # Add batch dimension
+    # Przekształć obraz do postaci akceptowanej przez MobileNetV2
+    img_array = tf.keras.applications.mobilenet_v2.preprocess_input(img_array)
 
-# Perform object detection
-# model = fasterrcnn_resnet50_fpn_v2(
-#     pretrained=True, weights=FasterRCNN_ResNet50_FPN_V2_Weights.DEFAULT
-# )
-model = retinanet_resnet50_fpn_v2(
-    pretrained=True, weights=RetinaNet_ResNet50_FPN_V2_Weights.DEFAULT
-)
-model.eval()  # Set the model to evaluation mode
+    # Dodaj wymiar wsadu (batch dimension)
+    img_array = np.expand_dims(img_array, axis=0)
 
-with torch.no_grad():
-    predictions = model(image_tensor)
+    # Wykonaj predykcję
+    predictions = model.predict(img_array)
 
-# Post-process the results
-pred_boxes = predictions[0]["boxes"].cpu().numpy()
-pred_scores = predictions[0]["scores"].cpu().numpy()
-pred_labels = predictions[0]["labels"].cpu().numpy()
+    # Odbierz wynik klasyfikacji
+    decoded_predictions = tf.keras.applications.mobilenet_v2.decode_predictions(
+        predictions
+    )
 
-print(pred_boxes)
-# # Visualize the detections
-# fig, ax = plt.subplots(1, figsize=(12, 9))
-# ax.imshow(image)
+    # Zwróć najlepsze rozpoznane obiekty (możesz dodać inne operacje, jak rysowanie na obrazie)
+    return (
+        decoded_predictions[0][0][1],
+        decoded_predictions[0][0][2],
+    )  # Nazwa i pewność predykcji
 
-# # Draw bounding boxes
-# for box, score, label in zip(pred_boxes, pred_scores, pred_labels):
-#     if score > 0.5:  # Only display confident detections
-#         x_min, y_min, x_max, y_max = box
-#         width, height = x_max - x_min, y_max - y_min
-#         rect = patches.Rectangle(
-#             (x_min, y_min), width, height, linewidth=2, edgecolor="r", facecolor="none"
-#         )
-#         ax.add_patch(rect)
-#         class_name = COCO_INSTANCE_CATEGORY_NAMES[label]
-#         ax.text(
-#             x_min,
-#             y_min,
-#             f"{class_name}: {score:.2f}",
-#             bbox=dict(facecolor="yellow", alpha=0.5),
-#         )
 
-# plt.show()
+# Ścieżka do wideo
+video_path = "./dataset/rugby/video/1.avi"
+
+# Otwórz wideo
+cap = cv2.VideoCapture(video_path)
+
+while cap.isOpened():
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    # Przetwórz klatkę
+    label, confidence = process_frame(frame)
+
+    # Dodaj napis z wynikami na klatce wideo
+    cv2.putText(
+        frame,
+        f"{label}: {confidence:.2f}",
+        (10, 30),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.7,
+        (0, 255, 0),
+        2,
+    )
+
+    # Wyświetl klatkę
+    cv2.imshow("Video Detection", frame)
+
+    # Jeśli naciśniesz 'q', przerwij
+    if cv2.waitKey(1) & 0xFF == ord("q"):
+        break
+
+# Zwolnij zasoby
+cap.release()
+cv2.destroyAllWindows()

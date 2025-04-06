@@ -8,6 +8,10 @@ import torch
 import mediapipe as mp
 import tensorflow as tf
 import numpy as np
+from transformers import RTDetrV2ForObjectDetection, AutoImageProcessor
+from PIL import Image
+
+torch.set_float32_matmul_precision("high")
 
 
 def start_test(model_name, media_path, media_type, device_type):
@@ -28,13 +32,13 @@ def run_videos(model_name, media_path, device_type):
         case "yolov12":
             run_yolo(model_name, media_path, device)
         case "ssd":
-            run_sfe(model_name, media_path, device)
+            run_se(model_name, media_path, device)
         case "fasterrcnn":
-            print(model_name)
+            run_frcnn(model_name, media_path, device)
         case "efficientdet":
-            run_sfe(model_name, media_path, device)
+            run_se(model_name, media_path, device)
         case "detr":
-            print(model_name)
+            run_rtdetrv2(media_path, device)
         case "retinanet":
             print(model_name)
         case _:
@@ -95,7 +99,7 @@ def run_yolo(model, media_path, device):
     print(results_data)
 
 
-def run_sfe(model, media_path, device):
+def run_se(model, media_path, device):
     if model == "ssd":
         path = Path("./models/ssd_mobilenet_v2.tflite")
     elif model == "efficientdet":
@@ -192,3 +196,57 @@ def run_sfe(model, media_path, device):
         cap.release()
         cv2.destroyAllWindows()
     print(results_data)
+
+
+def run_frcnn(model, media_path, device):
+    pass
+
+
+def run_rtdetrv2(media_path, device):
+    processor = AutoImageProcessor.from_pretrained("PekingU/rtdetr_v2_r18vd")
+    model = RTDetrV2ForObjectDetection.from_pretrained("PekingU/rtdetr_v2_r18vd")
+    model.eval()
+
+    for video in media_path.glob("*.avi"):
+        cap = cv2.VideoCapture(video)
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+
+            inputs = processor(images=image, return_tensors="pt")
+
+            with torch.no_grad():
+                outputs = model(**inputs)
+
+            target_sizes = torch.tensor([image.size[::-1]])
+            results = processor.post_process_object_detection(
+                outputs, target_sizes=target_sizes
+            )[0]
+
+            for score, label, box in zip(
+                results["scores"], results["labels"], results["boxes"]
+            ):
+                if score > 0.5:
+                    box = [int(i) for i in box.tolist()]
+                    label_text = f"{model.config.id2label[label.item()]}: {score:.2f}"
+                    cv2.rectangle(
+                        frame, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2
+                    )
+                    cv2.putText(
+                        frame,
+                        label_text,
+                        (box[0], box[1] - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        (0, 255, 0),
+                        2,
+                    )
+
+            cv2.imshow(f"RT-DETRv2", frame)
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
+        cap.release()
+        cv2.destroyAllWindows()
