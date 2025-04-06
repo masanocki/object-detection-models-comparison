@@ -43,16 +43,7 @@ class GUI(ctk.CTk):
         self.model_selection_list.pack(pady=10, padx=30, fill="x")
         CTkScrollableDropdown(
             self.model_selection_list,
-            values=[
-                "None",
-                "YOLOv11",
-                "YOLOv12",
-                "SSD",
-                "FasterRCNN",
-                "EfficientDet",
-                "DETR",
-                "RetinaNet",
-            ],
+            values=["None", "YOLOv11", "YOLOv12", "EfficientDet", "RT-DETRv2", "SSD"],
             command=lambda selected_model: [
                 set_model_details(
                     selected_model,

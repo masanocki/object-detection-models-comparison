@@ -1,37 +1,27 @@
 {
     "YOLOv11": {
         "model_name": "YOLOv11",
-        "model_version": "v11 640x640",
-        "model_description": "YOLOv11 is a fast and accurate object detection model optimized for real-time applications."
+        "model_version": "v11",
+        "model_description": "YOLOv11 is a fast and lightweight model for real-time object detection."
     },
     "YOLOv12": {
         "model_name": "YOLOv12",
-        "model_version": "v12 640x640",
-        "model_description": "YOLOv12 improves upon YOLOv11 with enhanced accuracy and better handling of small objects."
-    },
-    "SSD": {
-        "model_name": "SSD",
-        "model_version": "ResNet50 V1 FPN 640x640",
-        "model_description": "SSD (Single Shot Detector) is a lightweight model designed for efficient object detection."
-    },
-    "FasterRCNN": {
-        "model_name": "FasterRCNN",
-        "model_version": "ResNet101 V1 640x640",
-        "model_description": "Faster R-CNN is a highly accurate object detection model suitable for complex tasks."
+        "model_version": "v12",
+        "model_description": "YOLOv12 improves accuracy and handles small objects better than YOLOv11."
     },
     "EfficientDet": {
         "model_name": "EfficientDet",
-        "model_version": "D1 640x640",
-        "model_description": "EfficientDet is a scalable and efficient object detection model optimized for performance."
+        "model_version": "d0",
+        "model_description": "EfficientDet-D0 is optimized for mobile devices with minimal resource usage."
     },
-    "DETR": {
-        "model_name": "DETR",
-        "model_version": "v1 640x640",
-        "model_description": "DETR (DEtection TRansformer) is a transformer-based model for end-to-end object detection."
+    "RT-DETRv2": {
+        "model_name": "RT-DETRv2",
+        "model_version": "r18vd",
+        "model_description": "RT-DETRv2 is a transformer-based model for efficient object detection."
     },
-    "RetinaNet": {
-        "model_name": "RetinaNet",
-        "model_version": "ResNet50 FPN 640x640",
-        "model_description": "RetinaNet is a one-stage object detection model known for its focus on handling class imbalance."
+    "SSD": {
+        "model_name": "SSD",
+        "model_version": "mobilenet-v2",
+        "model_description": "SSD with MobileNet-V2 is a lightweight model for real-time detection."
     }
-} 
+}

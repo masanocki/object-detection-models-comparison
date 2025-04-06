@@ -10,6 +10,13 @@ import tensorflow as tf
 import numpy as np
 from transformers import RTDetrV2ForObjectDetection, AutoImageProcessor
 from PIL import Image
+from effdet import create_model
+from torchvision.transforms import functional as F
+from torchvision.utils import draw_bounding_boxes
+from effdet import create_model, DetBenchPredict
+from torchvision.transforms.functional import to_tensor
+import json
+from torchvision.ops import nms
 
 torch.set_float32_matmul_precision("high")
 
@@ -32,15 +39,11 @@ def run_videos(model_name, media_path, device_type):
         case "yolov12":
             run_yolo(model_name, media_path, device)
         case "ssd":
-            run_se(model_name, media_path, device)
-        case "fasterrcnn":
-            run_frcnn(model_name, media_path, device)
+            run_ssd(media_path, device)
         case "efficientdet":
-            run_se(model_name, media_path, device)
-        case "detr":
+            run_effdet(media_path, device)
+        case "rt-detrv2":
             run_rtdetrv2(media_path, device)
-        case "retinanet":
-            print(model_name)
         case _:
             return
 
@@ -99,12 +102,8 @@ def run_yolo(model, media_path, device):
     print(results_data)
 
 
-def run_se(model, media_path, device):
-    if model == "ssd":
-        path = Path("./models/ssd_mobilenet_v2.tflite")
-    elif model == "efficientdet":
-        path = Path("./models/efficientdet_lite0.tflite")
-    # TODO: FASTER RCNN OR SOME OTHER ALGORITHM
+def run_ssd(media_path, device):
+    path = Path("./models/ssd_mobilenet_v2.tflite")
 
     BaseOptions = mp.tasks.BaseOptions
     ObjectDetector = mp.tasks.vision.ObjectDetector
@@ -198,8 +197,84 @@ def run_se(model, media_path, device):
     print(results_data)
 
 
-def run_frcnn(model, media_path, device):
-    pass
+def run_effdet(media_path, device):
+    with open("./coco_classnames.json", "r") as f:
+        class_names = {int(v): k for k, v in json.load(f).items()}
+
+    model = create_model("tf_efficientdet_d0", pretrained=True, num_classes=91)
+    model = DetBenchPredict(model).to(device)
+    model.eval()
+
+    for video in media_path.glob("*.avi"):
+        cap = cv2.VideoCapture(video)
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            original_height, original_width = frame.shape[:2]
+            resized_frame = cv2.resize(frame, (512, 512))
+
+            rgb_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
+            input_tensor = to_tensor(rgb_frame).unsqueeze(0).to(device)
+
+            print("Input tensor shape:", input_tensor.shape)
+
+            with torch.no_grad():
+                outputs = model(input_tensor)
+
+            detections = outputs[0]
+            boxes, scores, labels = (
+                detections[:, :4],
+                detections[:, 4],
+                detections[:, 5],
+            )
+
+            print("Scores before sigmoid:", scores)
+            scores = torch.sigmoid(scores)
+            print("Scores after sigmoid:", scores)
+
+            # Apply confidence threshold
+            confidence_threshold = 0.1
+            keep = scores > confidence_threshold
+            boxes, scores, labels = boxes[keep], scores[keep], labels[keep]
+
+            # Apply NMS
+            from torchvision.ops import nms
+
+            nms_indices = nms(boxes, scores, iou_threshold=0.5)
+            boxes, scores, labels = (
+                boxes[nms_indices],
+                scores[nms_indices],
+                labels[nms_indices],
+            )
+
+            # Scale bounding boxes back to original frame size
+            boxes[:, [0, 2]] *= original_width / 512
+            boxes[:, [1, 3]] *= original_height / 512
+
+            for box, label, score in zip(boxes, labels, scores):
+                x1, y1, x2, y2 = map(int, box.tolist())
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+                class_name = class_names.get(int(label), "Unknown")
+                label_text = f"{class_name}: {score:.2f}"
+
+                cv2.putText(
+                    frame,
+                    label_text,
+                    (x1, y1 - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (0, 255, 0),
+                    2,
+                )
+
+            cv2.imshow("EfficientDet-D0", frame)
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
+        cap.release()
+        cv2.destroyAllWindows()
 
 
 def run_rtdetrv2(media_path, device):
