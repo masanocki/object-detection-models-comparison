@@ -19,27 +19,28 @@ import json
 from torchvision.ops import nms
 from torchvision.models.detection import ssd300_vgg16, SSD300_VGG16_Weights
 from torchvision.transforms import functional as F
+from visualizer import *
 
 torch.set_float32_matmul_precision("high")
 
 
-def start_test(model_name, media_path, media_type, device_type):
+def start_test(det_box_label, model_name, media_path, media_type, device_type):
     if media_type == "videos":
         t1 = threading.Thread(
-            target=run_videos, args=(model_name, media_path, device_type)
+            target=run_videos, args=(det_box_label, model_name, media_path, device_type)
         )
         t1.start()
 
 
-def run_videos(model_name, media_path, device_type):
+def run_videos(det_box_label, model_name, media_path, device_type):
     model_name = model_name.lower()
     media_path = Path(media_path)
     device = "cuda" if device_type == "GPU" else "cpu"
     match model_name:
         case "yolov11":
-            run_yolo(model_name, media_path, device)
+            run_yolo(det_box_label, model_name, media_path, device)
         case "yolov12":
-            run_yolo(model_name, media_path, device)
+            run_yolo(det_box_label, model_name, media_path, device)
         case "ssd":
             run_ssd(media_path, device)
         case "efficientdet":
@@ -50,7 +51,7 @@ def run_videos(model_name, media_path, device_type):
             return
 
 
-def run_yolo(model, media_path, device):
+def run_yolo(det_box_label, model, media_path, device):
     if model == "yolov11":
         path = Path("./models/yolo11n.pt")
     elif model == "yolov12":
@@ -77,6 +78,9 @@ def run_yolo(model, media_path, device):
                 frame_count += 1
 
                 annotated_frame = results[0].plot()
+
+                visualize_detection(annotated_frame, det_box_label)
+
                 cv2.imshow(f"{model} Tracking", annotated_frame)
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
@@ -123,11 +127,9 @@ def run_ssd(media_path, device):
         while cap.isOpened():
             ret, frame = cap.read()
             if ret:
-                # Prepare input
                 rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 image = F.to_tensor(rgb_frame).to(device)
 
-                # Run inference
                 frame_start_time = time.time()
                 with torch.no_grad():
                     predictions = model([image])
@@ -138,19 +140,16 @@ def run_ssd(media_path, device):
                 total_detection_time += frame_detection_time
                 frame_count += 1
 
-                # Process detections
                 boxes = predictions[0]["boxes"].cpu()
                 scores = predictions[0]["scores"].cpu()
                 labels = predictions[0]["labels"].cpu()
 
-                # Filter detections by confidence
                 confidence_threshold = 0.5
                 mask = scores > confidence_threshold
                 boxes = boxes[mask].numpy()
                 scores = scores[mask].numpy()
                 labels = labels[mask].numpy()
 
-                # Draw detections
                 for box, score, label in zip(boxes, scores, labels):
                     x1, y1, x2, y2 = map(int, box)
                     class_name = class_names.get(int(label), "Unknown")
