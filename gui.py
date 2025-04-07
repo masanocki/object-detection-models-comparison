@@ -550,18 +550,41 @@ class GUI(ctk.CTk):
             text="Start Test",
             font=ctk.CTkFont(size=15, weight="bold"),
             corner_radius=15,
-            command=lambda: start_test(
-                self.model_name.get(),
-                self.media_directory_path.get(),
-                self.media_type.get(),
-                self.device_var.get(),
-            ),
+            command=lambda: [
+                self.detection_screen,
+                start_test(
+                    self.model_name.get(),
+                    self.media_directory_path.get(),
+                    self.media_type.get(),
+                    self.device_var.get(),
+                    self.det_box_label,
+                ),
+            ],
         )
         self.start_test_button.pack(pady=(40, 0), anchor="s")
 
         self.select_default_checkboxes()
 
     # endregion
+
+    def detection_screen(self):
+        self.det_window = ctk.CTkToplevel(self)
+        self.det_window.title("Detection")
+        self.det_window.geometry("1280x720")
+
+        self.det_box = ctk.CTkFrame(
+            self.det_window,
+            border_width=1,
+            border_color="black",
+        )
+        self.det_box.place(relx=0.39, rely=0.01, relwidth=0.40, relheight=0.38)
+
+        self.det_box_label = ctk.CTkLabel(
+            self.det_box,
+            text="None",
+            font=ctk.CTkFont(size=15, weight="bold"),
+        )
+        self.det_box_label.place(relx=0.5, rely=0.5, anchor="center")
 
     # region VARIABLES_INIT
     def initialize_variables(self):
