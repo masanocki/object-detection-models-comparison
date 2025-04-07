@@ -21,7 +21,7 @@
     },
     "SSD": {
         "model_name": "SSD",
-        "model_version": "mobilenet-v2",
-        "model_description": "SSD with MobileNet-V2 is a lightweight model for real-time detection."
+        "model_version": "300-VGG16",
+        "model_description": "Single Shot Detector with VGG16 backbone, a classic architecture for object detection."
     }
 }
