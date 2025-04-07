@@ -204,6 +204,7 @@ def run_effdet(media_path, device):
     model = DetBenchPredict(model).to(device)
     model.eval()
 
+    torch.backends.cudnn.benchmark = True
     results_data = []
     for video in media_path.glob("*.avi"):
         cap = cv2.VideoCapture(video)
@@ -218,16 +219,18 @@ def run_effdet(media_path, device):
                 original_height, original_width = frame.shape[:2]
                 resized_frame = cv2.resize(frame, (512, 512))
                 rgb_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
-                input_tensor = to_tensor(rgb_frame).unsqueeze(0).to(device)
+                input_tensor = (
+                    to_tensor(rgb_frame).unsqueeze(0).to(device, non_blocking=True)
+                )
 
                 # to testuje
-                if frame_count % 30 == 0:
-                    torch.cuda.empty_cache()
+                # if frame_count % 5 == 0:
+                #     torch.cuda.empty_cache()
 
                 frame_start_time = time.time()
                 with torch.no_grad():
                     detections = model(input_tensor)
-                    detections = detections[0]
+                    detections = detections[0].cpu()
                 frame_detection_time = time.time() - frame_start_time
 
                 fps = 1 / frame_detection_time
@@ -240,8 +243,9 @@ def run_effdet(media_path, device):
                 labels = detections[:, 5].cpu()
 
                 # to testuje
-                del detections
-                del input_tensor
+                # del detections
+                # del input_tensor
+                # torch.cuda.empty_cache()
 
                 confidence_threshold = 0.25
                 keep = scores > confidence_threshold
@@ -279,6 +283,7 @@ def run_effdet(media_path, device):
                     break
             else:
                 break
+        torch.cuda.empty_cache()
         cap.release()
         cv2.destroyAllWindows()
 
@@ -304,7 +309,9 @@ def run_effdet(media_path, device):
 
 def run_rtdetrv2(media_path, device):
     processor = AutoImageProcessor.from_pretrained("PekingU/rtdetr_v2_r18vd")
-    model = RTDetrV2ForObjectDetection.from_pretrained("PekingU/rtdetr_v2_r18vd")
+    model = RTDetrV2ForObjectDetection.from_pretrained("PekingU/rtdetr_v2_r18vd").to(
+        device
+    )
     model.eval()
 
     for video in media_path.glob("*.avi"):
@@ -316,7 +323,7 @@ def run_rtdetrv2(media_path, device):
 
             image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 
-            inputs = processor(images=image, return_tensors="pt")
+            inputs = processor(images=image, return_tensors="pt").to(device)
 
             with torch.no_grad():
                 outputs = model(**inputs)
