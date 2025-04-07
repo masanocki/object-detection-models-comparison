@@ -17,6 +17,8 @@ from effdet import create_model, DetBenchPredict
 from torchvision.transforms.functional import to_tensor
 import json
 from torchvision.ops import nms
+from torchvision.models.detection import ssd300_vgg16, SSD300_VGG16_Weights
+from torchvision.transforms import functional as F
 
 torch.set_float32_matmul_precision("high")
 
@@ -96,92 +98,90 @@ def run_yolo(model, media_path, device):
                 "max_fps": max_fps,
                 "total_detection_time": total_time,
                 "avg_frame_time": avg_frame_time,
-                "model": model.device.type,
+                "device": device,
             }
         )
     print(results_data)
 
 
 def run_ssd(media_path, device):
-    path = Path("./models/ssd_mobilenet_v2.tflite")
+    with open("./coco_classnames.json", "r") as f:
+        class_names = {int(v): k for k, v in json.load(f).items()}
 
-    BaseOptions = mp.tasks.BaseOptions
-    ObjectDetector = mp.tasks.vision.ObjectDetector
-    ObjectDetectorOptions = mp.tasks.vision.ObjectDetectorOptions
-    VisionRunningMode = mp.tasks.vision.RunningMode
-
-    options = ObjectDetectorOptions(
-        base_options=BaseOptions(model_asset_path=path),
-        max_results=5,
-        running_mode=VisionRunningMode.VIDEO,
-    )
+    model = ssd300_vgg16(weights=SSD300_VGG16_Weights.DEFAULT)
+    model = model.to(device)
+    model.eval()
 
     results_data = []
     for video in media_path.glob("*.avi"):
         cap = cv2.VideoCapture(video)
-
         frame_count = 0
-        with ObjectDetector.create_from_options(options) as detector:
-            frame_count = 0
-            total_detection_time = 0
-            fps_list = []
-            start_time = time.time()
-            video_fps = cap.get(cv2.CAP_PROP_FPS)
-            timestamp_ms = 0
-            while cap.isOpened():
-                ret, frame = cap.read()
-                if ret:
-                    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    mp_image = mp.Image(
-                        image_format=mp.ImageFormat.SRGB, data=frame_rgb
-                    )
+        total_detection_time = 0
+        fps_list = []
+        start_time = time.time()
 
-                    frame_start_time = time.time()
-                    detection_result = detector.detect_for_video(
-                        mp_image, timestamp_ms=timestamp_ms
-                    )
-                    frame_detection_time = time.time() - frame_start_time
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if ret:
+                # Prepare input
+                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                image = F.to_tensor(rgb_frame).to(device)
 
-                    fps = 1 / frame_detection_time
-                    fps_list.append(fps)
-                    total_detection_time += frame_detection_time
-                    frame_count += 1
-                    timestamp_ms = int((frame_count / video_fps) * 1000)
+                # Run inference
+                frame_start_time = time.time()
+                with torch.no_grad():
+                    predictions = model([image])
+                frame_detection_time = time.time() - frame_start_time
 
-                    for detection in detection_result.detections:
-                        bbox = detection.bounding_box
-                        x1 = int(bbox.origin_x)
-                        y1 = int(bbox.origin_y)
-                        x2 = int(bbox.origin_x + bbox.width)
-                        y2 = int(bbox.origin_y + bbox.height)
+                fps = 1 / frame_detection_time
+                fps_list.append(fps)
+                total_detection_time += frame_detection_time
+                frame_count += 1
+
+                # Process detections
+                boxes = predictions[0]["boxes"].cpu()
+                scores = predictions[0]["scores"].cpu()
+                labels = predictions[0]["labels"].cpu()
+
+                # Filter detections by confidence
+                confidence_threshold = 0.5
+                mask = scores > confidence_threshold
+                boxes = boxes[mask].numpy()
+                scores = scores[mask].numpy()
+                labels = labels[mask].numpy()
+
+                # Draw detections
+                for box, score, label in zip(boxes, scores, labels):
+                    x1, y1, x2, y2 = map(int, box)
+                    class_name = class_names.get(int(label), "Unknown")
+                    label_text = f"{class_name}: {score:.2f}"
 
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    cv2.putText(
+                        frame,
+                        label_text,
+                        (x1, y1 - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        (0, 255, 0),
+                        2,
+                    )
 
-                    if detection.categories:
-                        category = detection.categories[0]
-                        class_name = category.category_name
-                        score = category.score
-                        cv2.putText(
-                            frame,
-                            f"{class_name}: {score:.2f}",
-                            (x1, y1 - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX,
-                            0.5,
-                            (0, 255, 0),
-                            2,
-                        )
-
-                    cv2.imshow("Object Detection", frame)
-
-                    if cv2.waitKey(1) & 0xFF == ord("q"):
-                        break
-                else:
+                cv2.imshow("SSD300 Detection", frame)
+                if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
+            else:
+                break
+
+        cap.release()
+        cv2.destroyAllWindows()
+
         min_fps = min(fps_list)
         max_fps = max(fps_list)
         avg_fps = sum(fps_list) / len(fps_list)
         avg_frame_time = total_detection_time / frame_count
         total_time = time.time() - start_time
+
         results_data.append(
             {
                 "video_name": video.name,
@@ -190,10 +190,9 @@ def run_ssd(media_path, device):
                 "max_fps": max_fps,
                 "total_detection_time": total_time,
                 "avg_frame_time": avg_frame_time,
+                "device": device,
             }
         )
-        cap.release()
-        cv2.destroyAllWindows()
     print(results_data)
 
 
@@ -201,80 +200,106 @@ def run_effdet(media_path, device):
     with open("./coco_classnames.json", "r") as f:
         class_names = {int(v): k for k, v in json.load(f).items()}
 
-    model = create_model("tf_efficientdet_d0", pretrained=True, num_classes=91)
+    model = create_model("tf_efficientdet_d0", pretrained=True, num_classes=90)
     model = DetBenchPredict(model).to(device)
     model.eval()
 
+    results_data = []
     for video in media_path.glob("*.avi"):
         cap = cv2.VideoCapture(video)
+        frame_count = 0
+        total_detection_time = 0
+        fps_list = []
+        start_time = time.time()
+
         while cap.isOpened():
             ret, frame = cap.read()
-            if not ret:
-                break
+            if ret:
+                original_height, original_width = frame.shape[:2]
+                resized_frame = cv2.resize(frame, (512, 512))
+                rgb_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
+                input_tensor = to_tensor(rgb_frame).unsqueeze(0).to(device)
 
-            original_height, original_width = frame.shape[:2]
-            resized_frame = cv2.resize(frame, (512, 512))
+                # to testuje
+                if frame_count % 30 == 0:
+                    torch.cuda.empty_cache()
 
-            rgb_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
-            input_tensor = to_tensor(rgb_frame).unsqueeze(0).to(device)
+                frame_start_time = time.time()
+                with torch.no_grad():
+                    detections = model(input_tensor)
+                    detections = detections[0]
+                frame_detection_time = time.time() - frame_start_time
 
-            print("Input tensor shape:", input_tensor.shape)
+                fps = 1 / frame_detection_time
+                fps_list.append(fps)
+                total_detection_time += frame_detection_time
+                frame_count += 1
 
-            with torch.no_grad():
-                outputs = model(input_tensor)
+                boxes = detections[:, :4].cpu()
+                scores = detections[:, 4].cpu()
+                labels = detections[:, 5].cpu()
 
-            detections = outputs[0]
-            boxes, scores, labels = (
-                detections[:, :4],
-                detections[:, 4],
-                detections[:, 5],
-            )
+                # to testuje
+                del detections
+                del input_tensor
 
-            print("Scores before sigmoid:", scores)
-            scores = torch.sigmoid(scores)
-            print("Scores after sigmoid:", scores)
+                confidence_threshold = 0.25
+                keep = scores > confidence_threshold
+                boxes = boxes[keep]
+                scores = scores[keep]
+                labels = labels[keep]
 
-            # Apply confidence threshold
-            confidence_threshold = 0.1
-            keep = scores > confidence_threshold
-            boxes, scores, labels = boxes[keep], scores[keep], labels[keep]
+                # keep = nms(boxes, scores, iou_threshold=0.5)
+                # boxes = boxes[keep]
+                # scores = scores[keep]
+                # labels = labels[keep]
 
-            # Apply NMS
-            from torchvision.ops import nms
+                scale_x = original_width / 512
+                scale_y = original_height / 512
+                boxes[:, [0, 2]] *= scale_x
+                boxes[:, [1, 3]] *= scale_y
 
-            nms_indices = nms(boxes, scores, iou_threshold=0.5)
-            boxes, scores, labels = (
-                boxes[nms_indices],
-                scores[nms_indices],
-                labels[nms_indices],
-            )
+                for box, score, label in zip(boxes, scores, labels):
+                    x1, y1, x2, y2 = map(int, box.tolist())
+                    class_name = class_names.get(int(label.item()), "Unknown")
+                    label_text = f"{class_name}: {score.item():.2f}"
 
-            # Scale bounding boxes back to original frame size
-            boxes[:, [0, 2]] *= original_width / 512
-            boxes[:, [1, 3]] *= original_height / 512
-
-            for box, label, score in zip(boxes, labels, scores):
-                x1, y1, x2, y2 = map(int, box.tolist())
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-
-                class_name = class_names.get(int(label), "Unknown")
-                label_text = f"{class_name}: {score:.2f}"
-
-                cv2.putText(
-                    frame,
-                    label_text,
-                    (x1, y1 - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    (0, 255, 0),
-                    2,
-                )
-
-            cv2.imshow("EfficientDet-D0", frame)
-            if cv2.waitKey(1) & 0xFF == ord("q"):
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    cv2.putText(
+                        frame,
+                        label_text,
+                        (x1, y1 - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        (0, 255, 0),
+                        2,
+                    )
+                cv2.imshow("EfficientDet-D0", frame)
+                if cv2.waitKey(1) & 0xFF == ord("q"):
+                    break
+            else:
                 break
         cap.release()
         cv2.destroyAllWindows()
+
+        min_fps = min(fps_list)
+        max_fps = max(fps_list)
+        avg_fps = sum(fps_list) / len(fps_list)
+        avg_frame_time = total_detection_time / frame_count
+        total_time = time.time() - start_time
+
+        results_data.append(
+            {
+                "video_name": video.name,
+                "min_fps": min_fps,
+                "avg_fps": avg_fps,
+                "max_fps": max_fps,
+                "total_detection_time": total_time,
+                "avg_frame_time": avg_frame_time,
+                "device": device,
+            }
+        )
+    print(results_data)
 
 
 def run_rtdetrv2(media_path, device):
