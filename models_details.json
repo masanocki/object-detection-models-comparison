@@ -2,26 +2,26 @@
     "YOLOv11": {
         "model_name": "YOLOv11",
         "model_version": "v11",
-        "model_description": "YOLOv11 is a fast and lightweight model for real-time object detection."
+        "model_description": "Single-stage object detection model utilizing end-to-end training approach"
     },
     "YOLOv12": {
         "model_name": "YOLOv12",
         "model_version": "v12",
-        "model_description": "YOLOv12 improves accuracy and handles small objects better than YOLOv11."
+        "model_description": "Single-stage object detection model with enhanced feature extraction capabilities"
     },
     "EfficientDet": {
         "model_name": "EfficientDet",
         "model_version": "d0",
-        "model_description": "EfficientDet-D0 is optimized for mobile devices with minimal resource usage."
+        "model_description": "Object detection architecture combining EfficientNet backbone with bidirectional feature network"
     },
     "RT-DETRv2": {
         "model_name": "RT-DETRv2",
         "model_version": "r18vd",
-        "model_description": "RT-DETRv2 is a transformer-based model for efficient object detection."
+        "model_description": "Transformer-based detection model utilizing deformable attention mechanisms"
     },
     "SSD": {
         "model_name": "SSD",
         "model_version": "300-VGG16",
-        "model_description": "Single Shot Detector with VGG16 backbone, a classic architecture for object detection."
+        "model_description": "Single-shot detection architecture using VGG16 as feature extractor with multi-scale predictions"
     }
 }
