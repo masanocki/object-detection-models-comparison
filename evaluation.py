@@ -1,46 +1,48 @@
-from ultralytics import YOLO
-import matplotlib.pyplot as plt
-from pathlib import Path
-import threading
-import cv2
-import time
-import torch
-import mediapipe as mp
-import tensorflow as tf
-import numpy as np
-from transformers import RTDetrV2ForObjectDetection, AutoImageProcessor
-from PIL import Image
-from effdet import create_model
-from torchvision.transforms import functional as F
-from torchvision.utils import draw_bounding_boxes
-from effdet import create_model, DetBenchPredict
-from torchvision.transforms.functional import to_tensor
 import json
-from torchvision.ops import nms
-from torchvision.models.detection import ssd300_vgg16, SSD300_VGG16_Weights
+import threading
+import time
+from pathlib import Path
+
+import cv2
+import torch
+from effdet import DetBenchPredict, create_model
+from PIL import Image
+from torchvision.models.detection import SSD300_VGG16_Weights, ssd300_vgg16
 from torchvision.transforms import functional as F
-from visualizer import *
+from torchvision.transforms.functional import to_tensor
+from transformers import AutoImageProcessor, RTDetrV2ForObjectDetection
+from ultralytics import YOLO
 
-torch.set_float32_matmul_precision("high")
+# from visualizer import *
+
+# torch.set_float32_matmul_precision("high")
+# if torch.cuda.is_available():
+#     # Enable CUDA memory allocation caching
+#     torch.cuda.empty_cache()
+#     # Set memory allocation strategy
+#     # torch.cuda.set_per_process_memory_fraction(0.8)  # Use 80% of available GPU memory
+#     # Enable TF32 precision
+#     torch.backends.cuda.matmul.allow_tf32 = True
+#     torch.backends.cudnn.allow_tf32 = True
 
 
-def start_test(det_box_label, model_name, media_path, media_type, device_type):
+def start_test(model_name, media_path, media_type, device_type):
     if media_type == "videos":
         t1 = threading.Thread(
-            target=run_videos, args=(det_box_label, model_name, media_path, device_type)
+            target=run_videos, args=(model_name, media_path, device_type)
         )
         t1.start()
 
 
-def run_videos(det_box_label, model_name, media_path, device_type):
+def run_videos(model_name, media_path, device_type):
     model_name = model_name.lower()
     media_path = Path(media_path)
     device = "cuda" if device_type == "GPU" else "cpu"
     match model_name:
         case "yolov11":
-            run_yolo(det_box_label, model_name, media_path, device)
+            run_yolo(model_name, media_path, device)
         case "yolov12":
-            run_yolo(det_box_label, model_name, media_path, device)
+            run_yolo(model_name, media_path, device)
         case "ssd":
             run_ssd(media_path, device)
         case "efficientdet":
@@ -51,11 +53,11 @@ def run_videos(det_box_label, model_name, media_path, device_type):
             return
 
 
-def run_yolo(det_box_label, model, media_path, device):
-    if model == "yolov11":
-        path = Path("./models/yolo11n.pt")
-    elif model == "yolov12":
-        path = Path("./models/yolo12n.pt")
+def run_yolo(model_name, media_path, device):
+    if model_name == "yolov11":
+        path = Path("./pretrained_models/yolo11n.pt")
+    elif model_name == "yolov12":
+        path = Path("./pretrained_models/yolo12n.pt")
 
     model = YOLO(path).to(device)
     results_data = []
@@ -79,9 +81,8 @@ def run_yolo(det_box_label, model, media_path, device):
 
                 annotated_frame = results[0].plot()
 
-                visualize_detection(annotated_frame, det_box_label)
+                cv2.imshow(f"{model_name} Tracking", annotated_frame)
 
-                cv2.imshow(f"{model} Tracking", annotated_frame)
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
             else:
