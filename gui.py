@@ -550,16 +550,12 @@ class GUI(ctk.CTk):
             text="Start Test",
             font=ctk.CTkFont(size=15, weight="bold"),
             corner_radius=15,
-            command=lambda: [
-                self.detection_screen,
-                start_test(
-                    self.model_name.get(),
-                    self.media_directory_path.get(),
-                    self.media_type.get(),
-                    self.device_var.get(),
-                    self.det_box_label,
-                ),
-            ],
+            command=lambda: start_test(
+                self.model_name.get(),
+                self.media_directory_path.get(),
+                self.media_type.get(),
+                self.device_var.get(),
+            ),
         )
         self.start_test_button.pack(pady=(40, 0), anchor="s")
 
