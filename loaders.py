@@ -101,8 +101,8 @@ def load_file_details(
 
     stripped_name = cell_file_name.strip()
     path = Path(dir_path) / stripped_name
-    if "_jpg" in stripped_name:
-        file_name.set(stripped_name.split("_jpg", 1)[0])
+    if ".rf" in stripped_name:
+        file_name.set(stripped_name.split(".rf", 1)[0])
     else:
         file_name.set(stripped_name)
     file_size.set(f"{path.stat().st_size} bytes")
