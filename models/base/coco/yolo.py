@@ -5,10 +5,10 @@ import cv2
 import torch
 from ultralytics import YOLO
 
-from metrics import *
+from models.utils.metrics import *
 
 
-def run_yolo_for_videos(model_name, media_path, device):
+def run_yolo_coco_videos(model_name, media_path, device):
     if model_name == "yolov11":
         path = Path("./saved_models/yolo11n.pt")
     elif model_name == "yolov12":
@@ -71,7 +71,7 @@ def run_yolo_for_videos(model_name, media_path, device):
     print(results_data)
 
 
-def run_yolo_for_images(model_name, media_path, device):
+def run_yolo_coco_images(model_name, media_path, device):
     if model_name == "yolov11":
         path = Path("./saved_models/yolo11n.pt")
     elif model_name == "yolov12":

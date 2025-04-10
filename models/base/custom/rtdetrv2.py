@@ -5,10 +5,10 @@ import torch
 from PIL import Image
 from transformers import AutoImageProcessor, RTDetrV2ForObjectDetection
 
-from metrics import *
+from models.utils.metrics import *
 
 
-def run_rtdetrv2_for_videos(media_path, device):
+def run_rtdetrv2_custom_videos(media_path, device):
     processor = AutoImageProcessor.from_pretrained(
         "PekingU/rtdetr_v2_r18vd", use_fast=True
     )
@@ -105,7 +105,7 @@ def run_rtdetrv2_for_videos(media_path, device):
     print(results_data)
 
 
-def run_rtdetrv2_for_images(media_path, device):
+def run_rtdetrv2_custom_images(media_path, device):
     processor = AutoImageProcessor.from_pretrained(
         "PekingU/rtdetr_v2_r18vd", use_fast=True
     )

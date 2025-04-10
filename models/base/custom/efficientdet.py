@@ -1,24 +1,25 @@
 import json
 import time
-from pathlib import Path
 
 import cv2
 import torch
-from torchvision.models.detection import SSD300_VGG16_Weights, ssd300_vgg16
-from torchvision.transforms import functional as F
+from effdet import DetBenchPredict, create_model
+from torchvision.ops import nms
+from torchvision.transforms.functional import to_tensor
 
-from metrics import *
+from models.utils.metrics import *
 
 
-def run_ssd_for_videos(media_path, device):
+def run_efficientdet_custom_videos(media_path, device):
 
     with open("./coco_classnames.json", "r") as f:
         class_names = {int(v): k for k, v in json.load(f).items()}
 
-    model = ssd300_vgg16(weights=SSD300_VGG16_Weights.DEFAULT)
-    model = model.to(device)
+    model = create_model("tf_efficientdet_d0", pretrained=True, num_classes=90)
+    model = DetBenchPredict(model).to(device)
     model.eval()
 
+    torch.backends.cudnn.benchmark = True
     results_data = []
     for video in media_path.glob("*.avi"):
         if device == "cuda":
@@ -31,12 +32,16 @@ def run_ssd_for_videos(media_path, device):
         while cap.isOpened():
             ret, frame = cap.read()
             if ret:
-                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                image = F.to_tensor(rgb_frame).to(device)
-
+                original_height, original_width = frame.shape[:2]
+                resized_frame = cv2.resize(frame, (512, 512))
+                rgb_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
+                input_tensor = (
+                    to_tensor(rgb_frame).unsqueeze(0).to(device, non_blocking=True)
+                )
                 frame_start_time = time.time()
                 with torch.no_grad():
-                    predictions = model([image])
+                    detections = model(input_tensor)
+                    detections = detections[0].cpu()
 
                 if device == "cuda":
                     torch.cuda.synchronize()
@@ -45,20 +50,30 @@ def run_ssd_for_videos(media_path, device):
                 frame_times.append(frame_time)
                 frame_count += 1
 
-                boxes = predictions[0]["boxes"].cpu()
-                scores = predictions[0]["scores"].cpu()
-                labels = predictions[0]["labels"].cpu()
+                boxes = detections[:, :4].cpu()
+                scores = detections[:, 4].cpu()
+                labels = detections[:, 5].cpu()
 
-                confidence_threshold = 0.5
-                mask = scores > confidence_threshold
-                boxes = boxes[mask].numpy()
-                scores = scores[mask].numpy()
-                labels = labels[mask].numpy()
+                confidence_threshold = 0.25
+                keep = scores > confidence_threshold
+                boxes = boxes[keep]
+                scores = scores[keep]
+                labels = labels[keep]
+
+                keep = nms(boxes, scores, iou_threshold=0.5)
+                boxes = boxes[keep]
+                scores = scores[keep]
+                labels = labels[keep]
+
+                scale_x = original_width / 512
+                scale_y = original_height / 512
+                boxes[:, [0, 2]] *= scale_x
+                boxes[:, [1, 3]] *= scale_y
 
                 for box, score, label in zip(boxes, scores, labels):
-                    x1, y1, x2, y2 = map(int, box)
-                    class_name = class_names.get(int(label), "Unknown")
-                    label_text = f"{class_name}: {score:.2f}"
+                    x1, y1, x2, y2 = map(int, box.tolist())
+                    class_name = class_names.get(int(label.item()), "Unknown")
+                    label_text = f"{class_name}: {score.item():.2f}"
 
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                     cv2.putText(
@@ -71,17 +86,17 @@ def run_ssd_for_videos(media_path, device):
                         2,
                     )
 
-                cv2.imshow("SSD300 Detection", frame)
+                cv2.imshow("EfficientDet-D0", frame)
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
             else:
                 break
-
         cap.release()
         cv2.destroyAllWindows()
 
         if device == "cuda":
-            del predictions
+            del detections
+            del input_tensor
             torch.cuda.empty_cache()
 
         total_time = time.time() - start_time
@@ -102,13 +117,13 @@ def run_ssd_for_videos(media_path, device):
     print(results_data)
 
 
-def run_ssd_for_images(media_path, device):
+def run_efficientdet_custom_images(media_path, device):
 
     with open("./coco_classnames.json", "r") as f:
         class_names = {int(v): k for k, v in json.load(f).items()}
 
-    model = ssd300_vgg16(weights=SSD300_VGG16_Weights.DEFAULT)
-    model = model.to(device)
+    model = create_model("tf_efficientdet_d0", pretrained=True, num_classes=90)
+    model = DetBenchPredict(model).to(device)
     model.eval()
 
     if device == "cuda":
@@ -120,16 +135,17 @@ def run_ssd_for_images(media_path, device):
     processed_count = 0
 
     for image_path in media_path.glob("*.jpg"):
-
         image = cv2.imread(image_path)
 
-        rgb_frame = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-        image_tensor = F.to_tensor(rgb_frame).to(device)
+        original_height, original_width = image.shape[:2]
+        resized_frame = cv2.resize(image, (512, 512))
+        rgb_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
+        input_tensor = to_tensor(rgb_frame).unsqueeze(0).to(device, non_blocking=True)
 
         frame_start_time = time.time()
         with torch.no_grad():
-            predictions = model([image_tensor])
+            detections = model(input_tensor)
+            detections = detections[0].cpu()
 
         if device == "cuda":
             torch.cuda.synchronize()
@@ -138,21 +154,30 @@ def run_ssd_for_images(media_path, device):
         frame_times.append(frame_time)
         processed_count += 1
 
-        boxes = predictions[0]["boxes"].cpu()
-        scores = predictions[0]["scores"].cpu()
-        labels = predictions[0]["labels"].cpu()
+        boxes = detections[:, :4].cpu()
+        scores = detections[:, 4].cpu()
+        labels = detections[:, 5].cpu()
 
-        confidence_threshold = 0.5
-        mask = scores > confidence_threshold
-        boxes = boxes[mask].numpy()
-        scores = scores[mask].numpy()
-        labels = labels[mask].numpy()
+        confidence_threshold = 0.25
+        keep = scores > confidence_threshold
+        boxes = boxes[keep]
+        scores = scores[keep]
+        labels = labels[keep]
+
+        keep = nms(boxes, scores, iou_threshold=0.5)
+        boxes = boxes[keep]
+        scores = scores[keep]
+        labels = labels[keep]
+
+        scale_x = original_width / 512
+        scale_y = original_height / 512
+        boxes[:, [0, 2]] *= scale_x
+        boxes[:, [1, 3]] *= scale_y
 
         for box, score, label in zip(boxes, scores, labels):
-            x1, y1, x2, y2 = map(int, box)
-            class_name = class_names.get(int(label), "Unknown")
-            label_text = f"{class_name}: {score:.2f}"
-
+            x1, y1, x2, y2 = map(int, box.tolist())
+            class_name = class_names.get(int(label.item()), "Unknown")
+            label_text = f"{class_name}: {score.item():.2f}"
             cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
             cv2.putText(
                 image,
@@ -163,14 +188,13 @@ def run_ssd_for_images(media_path, device):
                 (0, 255, 0),
                 2,
             )
-
-        cv2.imshow("SSD300 Detection", image)
+        cv2.imshow("EfficientDet-D0", image)
         cv2.waitKey(1)
 
     cv2.destroyAllWindows()
-
     if device == "cuda":
-        del predictions
+        del detections
+        del input_tensor
         torch.cuda.empty_cache()
 
     total_time = time.time() - start_time
@@ -185,5 +209,4 @@ def run_ssd_for_images(media_path, device):
             "images_processed": processed_count,
         }
     )
-
     print(results_data)
