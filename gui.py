@@ -1,7 +1,7 @@
 import customtkinter as ctk
 from customtkinter import filedialog
 from loaders import *
-from evaluation import *
+from model_runner import *
 from CTkScrollableDropdown import *
 from CTkTable import *
 
@@ -28,12 +28,38 @@ class GUI(ctk.CTk):
         )
         self.model_load_box.place(relx=0.01, rely=0.01, relwidth=0.49, relheight=0.3)
 
+        self.model_label_switch_frame = ctk.CTkFrame(
+            self.model_load_box, fg_color="transparent"
+        )
+        self.model_label_switch_frame.pack(pady=(20, 5), padx=30, fill="x")
+
         self.model_label = ctk.CTkLabel(
-            self.model_load_box,
+            self.model_label_switch_frame,
             text="Select model for object detection:",
             font=ctk.CTkFont(size=18, weight="bold"),
         )
-        self.model_label.pack(pady=(30, 5), padx=30, anchor="w")
+        self.model_label.pack(anchor="w", side=ctk.LEFT)
+
+        self.model_switch_frame = ctk.CTkFrame(
+            self.model_label_switch_frame, fg_color="transparent"
+        )
+        self.model_switch_frame.pack(anchor="e", side=ctk.RIGHT)
+
+        self.switch_left_label = ctk.CTkLabel(
+            self.model_switch_frame, text="COCO", font=ctk.CTkFont(size=14)
+        )
+        self.switch_left_label.pack(side=ctk.LEFT, padx=(0, 5))
+
+        self.model_switch = ctk.CTkSwitch(
+            self.model_switch_frame,
+            text="Custom",
+            font=ctk.CTkFont(size=14),
+            progress_color="transparent",
+            variable=self.model_type,
+            offvalue="coco",
+            onvalue="custom",
+        )
+        self.model_switch.pack(side=ctk.LEFT)
 
         self.model_selection_list = ctk.CTkComboBox(
             self.model_load_box,
@@ -535,7 +561,7 @@ class GUI(ctk.CTk):
             variable=self.save_format_var,
             font=ctk.CTkFont(size=15),
         )
-        self.save_format_dropdown.pack(padx=(20, 20), pady=5, fill="x")
+        self.save_format_dropdown.pack(padx=(20, 20), pady=(5, 0), fill="x")
 
         CTkScrollableDropdown(
             self.save_format_dropdown,
@@ -555,6 +581,7 @@ class GUI(ctk.CTk):
                 self.media_directory_path.get(),
                 self.media_type.get(),
                 self.device_var.get(),
+                self.model_type.get(),
             ),
         )
         self.start_test_button.pack(pady=(40, 0), anchor="s")
@@ -588,6 +615,7 @@ class GUI(ctk.CTk):
         self.model_name = ctk.StringVar(value="None")
         self.model_version = ctk.StringVar(value="None")
         self.model_description = ctk.StringVar(value="None")
+        self.model_type = ctk.StringVar(value="coco")
 
         # DIRECTORY VARIABLES
         self.media_directory_path = ctk.StringVar(value="Directory path")
