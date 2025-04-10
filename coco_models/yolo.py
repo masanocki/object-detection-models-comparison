@@ -72,4 +72,57 @@ def run_yolo_for_videos(model_name, media_path, device):
 
 
 def run_yolo_for_images(model_name, media_path, device):
-    pass
+    if model_name == "yolov11":
+        path = Path("./saved_models/yolo11n.pt")
+    elif model_name == "yolov12":
+        path = Path("./saved_models/yolo12n.pt")
+
+    model = YOLO(path).to(device)
+
+    if device == "cuda":
+        torch.cuda.empty_cache()
+
+    results_data = []
+    frame_times = []
+    start_time = time.time()
+    processed_count = 0
+
+    for image_path in media_path.glob("*.jpg"):
+        image = cv2.imread(image_path)
+
+        frame_start_time = time.time()
+        results = model.predict(image)
+
+        if device == "cuda":
+            torch.cuda.synchronize()
+
+        frame_time = time.time() - frame_start_time
+        frame_times.append(frame_time)
+        processed_count += 1
+
+        annotated_frame = results[0].plot()
+
+        cv2.imshow(f"{model_name} Detection", annotated_frame)
+
+        # NOTE: IN CASE OF YOLO NEEDED DELAY, REMOVE IT FOR METRICS
+        cv2.waitKey(1)
+
+    cv2.destroyAllWindows()
+    if device == "cuda":
+        del results
+        torch.cuda.empty_cache()
+
+    total_time = time.time() - start_time
+    metrics = calculate_fps_and_time(frame_times, total_time, processed_count)
+
+    results_data.append(
+        {
+            "folder_path": media_path,
+            "total_detection_time": total_time,
+            "avg_image_time": metrics["avg_frame_time"],
+            "device": device,
+            "images_processed": processed_count,
+        }
+    )
+
+    print(results_data)
