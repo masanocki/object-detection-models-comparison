@@ -576,13 +576,17 @@ class GUI(ctk.CTk):
             text="Start Test",
             font=ctk.CTkFont(size=15, weight="bold"),
             corner_radius=15,
-            command=lambda: start_test(
-                self.model_name.get(),
-                self.media_directory_path.get(),
-                self.media_type.get(),
-                self.device_var.get(),
-                self.model_type.get(),
-            ),
+            command=lambda: [
+                self.detection_screen(),
+                start_test(
+                    self.model_name.get(),
+                    self.media_directory_path.get(),
+                    self.media_type.get(),
+                    self.device_var.get(),
+                    self.model_type.get(),
+                    self,
+                ),
+            ],
         )
         self.start_test_button.pack(pady=(40, 0), anchor="s")
 
@@ -592,24 +596,64 @@ class GUI(ctk.CTk):
 
     def detection_screen(self):
         self.det_window = ctk.CTkToplevel(self)
-        self.det_window.title("Detection")
-        self.det_window.geometry("1280x720")
+        self.det_window.title("Detection Statistics")
+        self.det_window.geometry("800x600")
 
-        self.det_box = ctk.CTkFrame(
-            self.det_window,
-            border_width=1,
-            border_color="black",
-        )
-        self.det_box.place(relx=0.39, rely=0.01, relwidth=0.40, relheight=0.38)
+        self.header_frame = ctk.CTkFrame(self.det_window)
+        self.header_frame.pack(fill="x", padx=10, pady=5)
 
-        self.det_box_label = ctk.CTkLabel(
-            self.det_box,
-            text="None",
-            font=ctk.CTkFont(size=15, weight="bold"),
+        self.model_info_label = ctk.CTkLabel(
+            self.header_frame,
+            text=f"Model: {self.model_name.get()} | Device: {self.device_var.get()}",
+            font=ctk.CTkFont(size=16, weight="bold"),
         )
-        self.det_box_label.place(relx=0.5, rely=0.5, anchor="center")
+        self.model_info_label.pack(side="left", padx=10)
+
+        self.stats_frame = ctk.CTkFrame(self.det_window)
+        self.stats_frame.pack(fill="both", expand=True, padx=10, pady=5)
+
+        self.metric_labels = {}
+        row, col = 0, 0
+
+        metrics = [
+            ("FPS", "N/A"),
+            ("Video Detection Time", "N/A"),
+            ("Total Time", "N/A"),
+            ("Precision", "N/A"),
+            ("Recall", "N/A"),
+            ("F1 Score", "N/A"),
+            ("mAP", "N/A"),
+            ("IoU", "N/A"),
+        ]
+
+        for metric_name, initial_value in metrics:
+            self._add_metric_card(metric_name, initial_value, row, col)
+            col = (col + 1) % 2
+            if col == 0:
+                row += 1
+
+    def _add_metric_card(self, metric_name, initial_value, row, col):
+        card = ctk.CTkFrame(self.stats_frame, corner_radius=10, border_width=1)
+        card.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
+
+        self.stats_frame.grid_columnconfigure(col, weight=1)
+        self.stats_frame.grid_rowconfigure(row, weight=1)
+
+        ctk.CTkLabel(
+            card, text=metric_name, font=ctk.CTkFont(size=14, weight="bold")
+        ).pack(pady=(10, 5))
+
+        value_label = ctk.CTkLabel(card, text=initial_value, font=ctk.CTkFont(size=20))
+        value_label.pack(pady=(0, 10))
+
+        self.metric_labels[metric_name] = value_label
+
+    def update_metric(self, metric_name, value):
+        if metric_name in self.metric_labels:
+            self.metric_labels[metric_name].configure(text=str(value))
 
     # region VARIABLES_INIT
+
     def initialize_variables(self):
         # MODEL VARIABLES
         self.model_name = ctk.StringVar(value="None")
