@@ -10,7 +10,7 @@ from torchvision.transforms.functional import to_tensor
 from models.utils.metrics import *
 
 
-def run_efficientdet_coco_videos(media_path, device):
+def run_efficientdet_coco_videos(media_path, device, gui):
 
     with open("./coco_classnames.json", "r") as f:
         class_names = {int(v): k for k, v in json.load(f).items()}
@@ -21,6 +21,7 @@ def run_efficientdet_coco_videos(media_path, device):
 
     torch.backends.cudnn.benchmark = True
     results_data = []
+    global_start_time = time.time()
     for video in media_path.glob("*.avi"):
         if device == "cuda":
             torch.cuda.empty_cache()
@@ -49,6 +50,21 @@ def run_efficientdet_coco_videos(media_path, device):
                 frame_time = time.time() - frame_start_time
                 frame_times.append(frame_time)
                 frame_count += 1
+
+                current_video_time = time.time() - start_time
+                total_processing_time = time.time() - global_start_time
+
+                ### METRICS VISUALIZER UPDATE ###
+                if gui.metric_fps_checkbox.get():
+                    current_fps = 1 / frame_time if frame_time > 0 else 0
+                    gui.update_metric("FPS", f"{current_fps:.1f}")
+
+                if gui.metric_detection_time_checkbox.get():
+                    gui.update_metric(
+                        "Video Detection Time", f"{current_video_time:.1f} s"
+                    )
+                    gui.update_metric("Total Time", f"{total_processing_time:.1f} s")
+                ### METRICS VISUALIZER UPDATE ###
 
                 boxes = detections[:, :4].cpu()
                 scores = detections[:, 4].cpu()

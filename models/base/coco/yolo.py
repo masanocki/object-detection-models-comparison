@@ -8,14 +8,17 @@ from ultralytics import YOLO
 from models.utils.metrics import *
 
 
-def run_yolo_coco_videos(model_name, media_path, device):
+def run_yolo_coco_videos(model_name, media_path, device, gui):
     if model_name == "yolov11":
         path = Path("./saved_models/yolo11n.pt")
     elif model_name == "yolov12":
         path = Path("./saved_models/yolo12n.pt")
 
-    results_data = []
     model = YOLO(path).to(device)
+
+    results_data = []
+    global_start_time = time.time()
+
     for video in media_path.glob("*.avi"):
         if device == "cuda":
             torch.cuda.empty_cache()
@@ -29,7 +32,7 @@ def run_yolo_coco_videos(model_name, media_path, device):
             ret, frame = cap.read()
             if ret:
                 frame_start_time = time.time()
-                results = model.track(frame, persist=True)
+                results = model.track(frame, persist=True, verbose=False)
 
                 if device == "cuda":
                     torch.cuda.synchronize()
@@ -38,8 +41,22 @@ def run_yolo_coco_videos(model_name, media_path, device):
                 frame_times.append(frame_time)
                 frame_count += 1
 
-                annotated_frame = results[0].plot()
+                current_video_time = time.time() - start_time
+                total_processing_time = time.time() - global_start_time
 
+                ### METRICS VISUALIZER UPDATE ###
+                if gui.metric_fps_checkbox.get():
+                    current_fps = 1 / frame_time if frame_time > 0 else 0
+                    gui.update_metric("FPS", f"{current_fps:.1f}")
+
+                if gui.metric_detection_time_checkbox.get():
+                    gui.update_metric(
+                        "Video Detection Time", f"{current_video_time:.1f} s"
+                    )
+                    gui.update_metric("Total Time", f"{total_processing_time:.1f} s")
+                ### METRICS VISUALIZER UPDATE ###
+
+                annotated_frame = results[0].plot()
                 cv2.imshow(f"{model_name} Tracking", annotated_frame)
 
                 if cv2.waitKey(1) & 0xFF == ord("q"):
@@ -73,9 +90,9 @@ def run_yolo_coco_videos(model_name, media_path, device):
 
 def run_yolo_coco_images(model_name, media_path, device):
     if model_name == "yolov11":
-        path = Path("./saved_models/yolo11n.pt")
+        path = Path("./saved_models/yolo11s.pt")
     elif model_name == "yolov12":
-        path = Path("./saved_models/yolo12n.pt")
+        path = Path("./saved_models/yolo12s.pt")
 
     model = YOLO(path).to(device)
 
