@@ -174,3 +174,5 @@ cython_debug/
 dataset/
 annotations/
 saved_models/
+tests/
+custom_models/
