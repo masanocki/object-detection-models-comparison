@@ -5,8 +5,7 @@ import cv2
 import torch
 from ultralytics import YOLO
 
-from models.utils.metrics import *
-from models.utils.helpers import *
+from models.utils import *
 
 
 def run_yolo_custom_videos(model_name, media_path, device, sport_type, gui):
