@@ -8,9 +8,17 @@ from ultralytics import YOLO
 from models.utils.metrics import *
 
 
-def run_yolo_custom_videos(model_name, media_path, device):
+def run_yolo_custom_videos(model_name, media_path, device, sport_type, gui):
     if model_name == "yolov11":
         path = Path("./saved_models/yolo11n.pt")
+        match sport_type:
+            case "rugby":
+                path = (
+                    Path(__file__).resolve().parents[3]
+                    / "custom_models"
+                    / "yolo11"
+                    / "yolo11_rugby.pt"
+                )
     elif model_name == "yolov12":
         path = Path("./saved_models/yolo12n.pt")
 
