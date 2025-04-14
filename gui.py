@@ -584,6 +584,7 @@ class GUI(ctk.CTk):
                     self.media_type.get(),
                     self.device_var.get(),
                     self.model_type.get(),
+                    self.loaded_sport.get(),
                     self,
                 ),
             ],
