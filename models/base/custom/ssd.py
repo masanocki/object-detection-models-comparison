@@ -9,10 +9,17 @@ from torchvision.transforms import functional as F
 
 from models.utils.metrics import *
 
-from models.utils.helpers import get_correct_custom_model
+from models.utils.helpers import get_correct_custom_model, visualize_effdet_ssd
 
 
 def run_ssd_custom_videos(media_path, device, sport_type, gui):
+
+    ### VISUALIZATION CHECKBOXES ###
+    enable_visualization = gui.enable_visualization_var.get()
+    show_boxes = gui.show_bounding_boxes_checkbox.get()
+    show_scores = gui.show_confidence_scores_checkbox.get()
+    show_labels = gui.show_labels_checkbox.get()
+    ###
 
     path = get_correct_custom_model(sport_type, "ssd")
 
@@ -62,26 +69,21 @@ def run_ssd_custom_videos(media_path, device, sport_type, gui):
                 scores = scores[mask].numpy()
                 labels = labels[mask].numpy()
 
-                for box, score, label in zip(boxes, scores, labels):
-                    x1, y1, x2, y2 = map(int, box.tolist())
-                    class_id = int(label.item())
-                    class_name = class_names.get(class_id, "unknown")
-                    label_text = f"{class_name}: {score.item():.2f}"
-
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                    cv2.putText(
+                ### VISUALIZATION SECTION ###
+                if enable_visualization:
+                    visualize_effdet_ssd(
+                        show_boxes,
+                        show_scores,
+                        show_labels,
+                        class_names,
+                        boxes,
+                        scores,
+                        labels,
                         frame,
-                        label_text,
-                        (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.5,
-                        (0, 255, 0),
-                        2,
                     )
-
-                cv2.imshow("SSD300 Detection", frame)
-                if cv2.waitKey(1) & 0xFF == ord("q"):
-                    break
+                    cv2.imshow("ssd", frame)
+                    cv2.waitKey(1)
+                ###
             else:
                 break
 
@@ -111,6 +113,13 @@ def run_ssd_custom_videos(media_path, device, sport_type, gui):
 
 
 def run_ssd_custom_images(media_path, device, sport_type, gui):
+
+    ### VISUALIZATION CHECKBOXES ###
+    enable_visualization = gui.enable_visualization_var.get()
+    show_boxes = gui.show_bounding_boxes_checkbox.get()
+    show_scores = gui.show_confidence_scores_checkbox.get()
+    show_labels = gui.show_labels_checkbox.get()
+    ###
 
     path = get_correct_custom_model(sport_type, "ssd")
 
@@ -161,24 +170,21 @@ def run_ssd_custom_images(media_path, device, sport_type, gui):
         scores = scores[mask].numpy()
         labels = labels[mask].numpy()
 
-        for box, score, label in zip(boxes, scores, labels):
-            x1, y1, x2, y2 = map(int, box)
-            class_name = class_names.get(int(label), "Unknown")
-            label_text = f"{class_name}: {score:.2f}"
-
-            cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(
+        ### VISUALIZATION SECTION ###
+        if enable_visualization:
+            visualize_effdet_ssd(
+                show_boxes,
+                show_scores,
+                show_labels,
+                class_names,
+                boxes,
+                scores,
+                labels,
                 image,
-                label_text,
-                (x1, y1 - 10),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.5,
-                (0, 255, 0),
-                2,
             )
-
-        cv2.imshow("SSD300 Detection", image)
-        cv2.waitKey(1)
+            cv2.imshow("ssd", image)
+            cv2.waitKey(1)
+        ###
 
     cv2.destroyAllWindows()
 

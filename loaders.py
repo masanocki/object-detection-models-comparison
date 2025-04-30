@@ -156,11 +156,27 @@ def stop_and_realease_video(preview_label):
         current_after_id = None
 
 
-def enable_visualization_options(is_enabled, bounding_boxes, confidence, save_viz):
+def enable_visualization_options(is_enabled, bounding_boxes, confidence, show_labels):
     state = ctk.NORMAL if is_enabled == 1 else ctk.DISABLED
+
+    if state == ctk.DISABLED:
+        if bounding_boxes.get():
+            bounding_boxes.deselect()
+        if confidence.get():
+            confidence.deselect()
+        if show_labels.get():
+            show_labels.deselect()
+    elif state == ctk.NORMAL:
+        if not bounding_boxes.get():
+            bounding_boxes.select()
+        if not confidence.get():
+            confidence.select()
+        if not show_labels.get():
+            show_labels.select()
+
     bounding_boxes.configure(state=state)
     confidence.configure(state=state)
-    save_viz.configure(state=state)
+    show_labels.configure(state=state)
 
 
 def disable_unused_metrics_checkboxes(

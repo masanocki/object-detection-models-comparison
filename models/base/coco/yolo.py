@@ -9,6 +9,14 @@ from models.utils.metrics import *
 
 
 def run_yolo_coco_videos(model_name, media_path, device, gui):
+
+    ### VISUALIZATION CHECKBOXES ###
+    enable_visualization = gui.enable_visualization_var.get()
+    show_boxes = gui.show_bounding_boxes_checkbox.get()
+    show_scores = gui.show_confidence_scores_checkbox.get()
+    show_labels = gui.show_labels_checkbox.get()
+    ###
+
     if model_name == "yolov11":
         path = Path("./saved_models/yolo11n.pt")
     elif model_name == "yolov12":
@@ -56,11 +64,13 @@ def run_yolo_coco_videos(model_name, media_path, device, gui):
                     gui.update_metric("Total Time", f"{total_processing_time:.1f} s")
                 ### METRICS VISUALIZER UPDATE ###
 
-                annotated_frame = results[0].plot()
-                cv2.imshow(f"{model_name} Tracking", annotated_frame)
+                if enable_visualization:
+                    annotated_frame = results[0].plot(
+                        boxes=show_boxes, labels=show_labels, conf=show_scores
+                    )
+                    cv2.imshow(model_name, annotated_frame)
+                    cv2.waitKey(1)
 
-                if cv2.waitKey(1) & 0xFF == ord("q"):
-                    break
             else:
                 break
         cap.release()

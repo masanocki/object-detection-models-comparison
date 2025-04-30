@@ -452,7 +452,7 @@ class GUI(ctk.CTk):
                 self.enable_visualization_var.get(),
                 self.show_bounding_boxes_checkbox,
                 self.show_confidence_scores_checkbox,
-                self.save_visualizations_checkbox,
+                self.show_labels_checkbox,
             ),
         )
         self.enable_visualization_yes_option.pack(
@@ -469,7 +469,7 @@ class GUI(ctk.CTk):
                 self.enable_visualization_var.get(),
                 self.show_bounding_boxes_checkbox,
                 self.show_confidence_scores_checkbox,
-                self.save_visualizations_checkbox,
+                self.show_labels_checkbox,
             ),
         )
         self.enable_visualization_no_option.pack(pady=10, anchor="w", side=ctk.LEFT)
@@ -501,15 +501,13 @@ class GUI(ctk.CTk):
             padx=(20, 0), pady=5, anchor="w", side=ctk.LEFT
         )
 
-        self.save_visualizations_checkbox = ctk.CTkCheckBox(
+        self.show_labels_checkbox = ctk.CTkCheckBox(
             self.additional_visualization_options,
-            text="Save Visualizations to Disk",
+            text="Show Labels",
             font=ctk.CTkFont(size=15),
             state="normal" if self.enable_visualization_var.get() == 1 else "disabled",
         )
-        self.save_visualizations_checkbox.pack(
-            padx=(20, 0), pady=5, anchor="w", side=ctk.LEFT
-        )
+        self.show_labels_checkbox.pack(padx=(20, 0), pady=5, anchor="w", side=ctk.LEFT)
 
         self.device_label = ctk.CTkLabel(
             self.specification_box,
@@ -660,7 +658,7 @@ class GUI(ctk.CTk):
         self.model_name = ctk.StringVar(value="None")
         self.model_version = ctk.StringVar(value="None")
         self.model_description = ctk.StringVar(value="None")
-        self.model_type = ctk.StringVar(value="coco")
+        self.model_type = ctk.StringVar(value="custom")
 
         # DIRECTORY VARIABLES
         self.media_directory_path = ctk.StringVar(value="Directory path")
@@ -675,9 +673,9 @@ class GUI(ctk.CTk):
         self.file_size = ctk.StringVar(value="0 KB")
 
         # SPECIFICATIONS VARIABLES
-        self.enable_visualization_var = ctk.IntVar(value=0)
+        self.enable_visualization_var = ctk.IntVar(value=1)
         self.save_format_var = ctk.StringVar(value="CSV")
-        self.device_var = ctk.StringVar(value="CPU")
+        self.device_var = ctk.StringVar(value="GPU")
 
     # endregion
 
@@ -696,5 +694,8 @@ class GUI(ctk.CTk):
         self.metric_detection_time_checkbox.select()
         self.metric_fps_checkbox.select()
         self.auto_save_checkbox.select()
+        self.show_bounding_boxes_checkbox.select()
+        self.show_confidence_scores_checkbox.select()
+        self.show_labels_checkbox.select()
 
     # endregion

@@ -8,9 +8,17 @@ from torchvision.models.detection import SSD300_VGG16_Weights, ssd300_vgg16
 from torchvision.transforms import functional as F
 
 from models.utils.metrics import *
+from models.utils.helpers import visualize_effdet_ssd
 
 
 def run_ssd_coco_videos(media_path, device, gui):
+
+    ### VISUALIZATION CHECKBOXES ###
+    enable_visualization = gui.enable_visualization_var.get()
+    show_boxes = gui.show_bounding_boxes_checkbox.get()
+    show_scores = gui.show_confidence_scores_checkbox.get()
+    show_labels = gui.show_labels_checkbox.get()
+    ###
 
     with open("./coco_classnames.json", "r") as f:
         class_names = {int(v): k for k, v in json.load(f).items()}
@@ -59,7 +67,7 @@ def run_ssd_coco_videos(media_path, device, gui):
                         "Video Detection Time", f"{current_video_time:.1f} s"
                     )
                     gui.update_metric("Total Time", f"{total_processing_time:.1f} s")
-                ### METRICS VISUALIZER UPDATE ###
+                ###
 
                 boxes = predictions[0]["boxes"].cpu()
                 scores = predictions[0]["scores"].cpu()
@@ -71,25 +79,22 @@ def run_ssd_coco_videos(media_path, device, gui):
                 scores = scores[mask].numpy()
                 labels = labels[mask].numpy()
 
-                for box, score, label in zip(boxes, scores, labels):
-                    x1, y1, x2, y2 = map(int, box)
-                    class_name = class_names.get(int(label), "Unknown")
-                    label_text = f"{class_name}: {score:.2f}"
-
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                    cv2.putText(
+                ### VISUALIZATION SECTION ###
+                if enable_visualization:
+                    visualize_effdet_ssd(
+                        show_boxes,
+                        show_scores,
+                        show_labels,
+                        class_names,
+                        boxes,
+                        scores,
+                        labels,
                         frame,
-                        label_text,
-                        (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.5,
-                        (0, 255, 0),
-                        2,
                     )
+                    cv2.imshow("ssd", frame)
+                    cv2.waitKey(1)
+                ###
 
-                cv2.imshow("SSD300 Detection", frame)
-                if cv2.waitKey(1) & 0xFF == ord("q"):
-                    break
             else:
                 break
 
@@ -118,7 +123,14 @@ def run_ssd_coco_videos(media_path, device, gui):
     print(results_data)
 
 
-def run_ssd_coco_images(media_path, device):
+def run_ssd_coco_images(media_path, device, gui):
+
+    ### VISUALIZATION CHECKBOXES ###
+    enable_visualization = gui.enable_visualization_var.get()
+    show_boxes = gui.show_bounding_boxes_checkbox.get()
+    show_scores = gui.show_confidence_scores_checkbox.get()
+    show_labels = gui.show_labels_checkbox.get()
+    ###
 
     with open("./coco_classnames.json", "r") as f:
         class_names = {int(v): k for k, v in json.load(f).items()}
@@ -164,24 +176,21 @@ def run_ssd_coco_images(media_path, device):
         scores = scores[mask].numpy()
         labels = labels[mask].numpy()
 
-        for box, score, label in zip(boxes, scores, labels):
-            x1, y1, x2, y2 = map(int, box)
-            class_name = class_names.get(int(label), "Unknown")
-            label_text = f"{class_name}: {score:.2f}"
-
-            cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(
+        ### VISUALIZATION SECTION ###
+        if enable_visualization:
+            visualize_effdet_ssd(
+                show_boxes,
+                show_scores,
+                show_labels,
+                class_names,
+                boxes,
+                scores,
+                labels,
                 image,
-                label_text,
-                (x1, y1 - 10),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.5,
-                (0, 255, 0),
-                2,
             )
-
-        cv2.imshow("SSD300 Detection", image)
-        cv2.waitKey(1)
+            cv2.imshow("ssd", image)
+            cv2.waitKey(1)
+        ###
 
     cv2.destroyAllWindows()
 

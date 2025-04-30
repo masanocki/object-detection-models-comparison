@@ -7,10 +7,17 @@ from transformers import AutoModelForObjectDetection, AutoProcessor
 
 from models.utils.metrics import *
 
-from models.utils.helpers import get_correct_custom_model
+from models.utils.helpers import get_correct_custom_model, visualize_rtdetr
 
 
 def run_rtdetrv2_custom_videos(media_path, device, sport_type, gui):
+
+    ### VISUALIZATION CHECKBOXES ###
+    enable_visualization = gui.enable_visualization_var.get()
+    show_boxes = gui.show_bounding_boxes_checkbox.get()
+    show_scores = gui.show_confidence_scores_checkbox.get()
+    show_labels = gui.show_labels_checkbox.get()
+    ###
 
     path = get_correct_custom_model(sport_type, "rtdetrv2")
 
@@ -53,30 +60,21 @@ def run_rtdetrv2_custom_videos(media_path, device, sport_type, gui):
                 frame_times.append(frame_time)
                 frame_count += 1
 
-                for score, label, box in zip(
-                    results["scores"], results["labels"], results["boxes"]
-                ):
-                    if score > 0.5:
-                        box = [int(i) for i in box.tolist()]
-                        label_text = (
-                            f"{model.config.id2label[label.item()]}: {score:.2f}"
-                        )
-                        cv2.rectangle(
-                            frame, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2
-                        )
-                        cv2.putText(
-                            frame,
-                            label_text,
-                            (box[0], box[1] - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX,
-                            0.5,
-                            (0, 255, 0),
-                            2,
-                        )
+                ### VISUALIZATION SECTION ###
+                if enable_visualization:
+                    visualize_rtdetr(
+                        show_boxes,
+                        show_scores,
+                        show_labels,
+                        model,
+                        results,
+                        frame,
+                        0.5,
+                    )
+                    cv2.imshow("rtdetrv2", frame)
+                    cv2.waitKey(1)
+                ###
 
-                cv2.imshow(f"RT-DETRv2", frame)
-                if cv2.waitKey(1) & 0xFF == ord("q"):
-                    break
             else:
                 break
         cap.release()
@@ -107,6 +105,14 @@ def run_rtdetrv2_custom_videos(media_path, device, sport_type, gui):
 
 
 def run_rtdetrv2_custom_images(media_path, device, sport_type, gui):
+
+    ### VISUALIZATION CHECKBOXES ###
+    enable_visualization = gui.enable_visualization_var.get()
+    show_boxes = gui.show_bounding_boxes_checkbox.get()
+    show_scores = gui.show_confidence_scores_checkbox.get()
+    show_labels = gui.show_labels_checkbox.get()
+    ###
+
     path = get_correct_custom_model(sport_type, "rtdetrv2")
 
     processor = AutoProcessor.from_pretrained("PekingU/rtdetr_v2_r18vd", use_fast=True)
@@ -144,25 +150,20 @@ def run_rtdetrv2_custom_images(media_path, device, sport_type, gui):
         frame_times.append(frame_time)
         processed_count += 1
 
-        for score, label, box in zip(
-            results["scores"], results["labels"], results["boxes"]
-        ):
-            if score > 0.5:
-                box = [int(i) for i in box.tolist()]
-                label_text = f"{model.config.id2label[label.item()]}: {score:.2f}"
-                cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2)
-                cv2.putText(
-                    image,
-                    label_text,
-                    (box[0], box[1] - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    (0, 255, 0),
-                    2,
-                )
-
-        cv2.imshow(f"RT-DETRv2", image)
-        cv2.waitKey(1)
+        ### VISUALIZATION SECTION ###
+        if enable_visualization:
+            visualize_rtdetr(
+                show_boxes,
+                show_scores,
+                show_labels,
+                model,
+                results,
+                image,
+                0.5,
+            )
+            cv2.imshow("rtdetrv2", image)
+            cv2.waitKey(1)
+        ###
 
     cv2.destroyAllWindows()
 

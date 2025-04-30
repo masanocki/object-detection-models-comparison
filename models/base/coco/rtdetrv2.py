@@ -6,9 +6,18 @@ from PIL import Image
 from transformers import AutoImageProcessor, RTDetrV2ForObjectDetection
 
 from models.utils.metrics import *
+from models.utils.helpers import visualize_rtdetr
 
 
 def run_rtdetrv2_coco_videos(media_path, device, gui):
+
+    ### VISUALIZATION CHECKBOXES ###
+    enable_visualization = gui.enable_visualization_var.get()
+    show_boxes = gui.show_bounding_boxes_checkbox.get()
+    show_scores = gui.show_confidence_scores_checkbox.get()
+    show_labels = gui.show_labels_checkbox.get()
+    ###
+
     processor = AutoImageProcessor.from_pretrained(
         "PekingU/rtdetr_v2_r18vd", use_fast=True
     )
@@ -66,32 +75,23 @@ def run_rtdetrv2_coco_videos(media_path, device, gui):
                         "Video Detection Time", f"{current_video_time:.1f} s"
                     )
                     gui.update_metric("Total Time", f"{total_processing_time:.1f} s")
-                ### METRICS VISUALIZER UPDATE ###
+                ###
 
-                for score, label, box in zip(
-                    results["scores"], results["labels"], results["boxes"]
-                ):
-                    if score > 0.5:
-                        box = [int(i) for i in box.tolist()]
-                        label_text = (
-                            f"{model.config.id2label[label.item()]}: {score:.2f}"
-                        )
-                        cv2.rectangle(
-                            frame, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2
-                        )
-                        cv2.putText(
-                            frame,
-                            label_text,
-                            (box[0], box[1] - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX,
-                            0.5,
-                            (0, 255, 0),
-                            2,
-                        )
+                ### VISUALIZATION SECTION ###
+                if enable_visualization:
+                    visualize_rtdetr(
+                        show_boxes,
+                        show_scores,
+                        show_labels,
+                        model,
+                        results,
+                        frame,
+                        0.5,
+                    )
+                    cv2.imshow("rtdetrv2", frame)
+                    cv2.waitKey(1)
+                ###
 
-                cv2.imshow(f"RT-DETRv2", frame)
-                if cv2.waitKey(1) & 0xFF == ord("q"):
-                    break
             else:
                 break
         cap.release()
@@ -121,7 +121,15 @@ def run_rtdetrv2_coco_videos(media_path, device, gui):
     print(results_data)
 
 
-def run_rtdetrv2_coco_images(media_path, device):
+def run_rtdetrv2_coco_images(media_path, device, gui):
+
+    ### VISUALIZATION CHECKBOXES ###
+    enable_visualization = gui.enable_visualization_var.get()
+    show_boxes = gui.show_bounding_boxes_checkbox.get()
+    show_scores = gui.show_confidence_scores_checkbox.get()
+    show_labels = gui.show_labels_checkbox.get()
+    ###
+
     processor = AutoImageProcessor.from_pretrained(
         "PekingU/rtdetr_v2_r18vd", use_fast=True
     )
@@ -161,25 +169,20 @@ def run_rtdetrv2_coco_images(media_path, device):
         frame_times.append(frame_time)
         processed_count += 1
 
-        for score, label, box in zip(
-            results["scores"], results["labels"], results["boxes"]
-        ):
-            if score > 0.5:
-                box = [int(i) for i in box.tolist()]
-                label_text = f"{model.config.id2label[label.item()]}: {score:.2f}"
-                cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2)
-                cv2.putText(
-                    image,
-                    label_text,
-                    (box[0], box[1] - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    (0, 255, 0),
-                    2,
-                )
-
-        cv2.imshow(f"RT-DETRv2", image)
-        cv2.waitKey(1)
+        ### VISUALIZATION SECTION ###
+        if enable_visualization:
+            visualize_rtdetr(
+                show_boxes,
+                show_scores,
+                show_labels,
+                model,
+                results,
+                image,
+                0.5,
+            )
+            cv2.imshow("rtdetrv2", image)
+            cv2.waitKey(1)
+        ###
 
     cv2.destroyAllWindows()
 
