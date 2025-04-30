@@ -3,18 +3,19 @@ import time
 import cv2
 import torch
 from PIL import Image
-from transformers import AutoImageProcessor, RTDetrV2ForObjectDetection
+from transformers import AutoModelForObjectDetection, AutoProcessor
 
 from models.utils.metrics import *
 
+from models.utils.helpers import get_correct_custom_model
 
-def run_rtdetrv2_custom_videos(media_path, device):
-    processor = AutoImageProcessor.from_pretrained(
-        "PekingU/rtdetr_v2_r18vd", use_fast=True
-    )
-    model = RTDetrV2ForObjectDetection.from_pretrained("PekingU/rtdetr_v2_r18vd").to(
-        device
-    )
+
+def run_rtdetrv2_custom_videos(media_path, device, sport_type, gui):
+
+    path = get_correct_custom_model(sport_type, "rtdetrv2")
+
+    processor = AutoProcessor.from_pretrained("PekingU/rtdetr_v2_r18vd", use_fast=True)
+    model = AutoModelForObjectDetection.from_pretrained(path).to(device)
     model.eval()
 
     results_data = []
@@ -105,13 +106,11 @@ def run_rtdetrv2_custom_videos(media_path, device):
     print(results_data)
 
 
-def run_rtdetrv2_custom_images(media_path, device):
-    processor = AutoImageProcessor.from_pretrained(
-        "PekingU/rtdetr_v2_r18vd", use_fast=True
-    )
-    model = RTDetrV2ForObjectDetection.from_pretrained("PekingU/rtdetr_v2_r18vd").to(
-        device
-    )
+def run_rtdetrv2_custom_images(media_path, device, sport_type, gui):
+    path = get_correct_custom_model(sport_type, "rtdetrv2")
+
+    processor = AutoProcessor.from_pretrained("PekingU/rtdetr_v2_r18vd", use_fast=True)
+    model = AutoModelForObjectDetection.from_pretrained(path).to(device)
     model.eval()
 
     if device == "cuda":

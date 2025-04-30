@@ -9,13 +9,20 @@ from torchvision.transforms import functional as F
 
 from models.utils.metrics import *
 
+from models.utils.helpers import get_correct_custom_model
 
-def run_ssd_custom_videos(media_path, device):
 
-    with open("./coco_classnames.json", "r") as f:
-        class_names = {int(v): k for k, v in json.load(f).items()}
+def run_ssd_custom_videos(media_path, device, sport_type, gui):
 
-    model = ssd300_vgg16(weights=SSD300_VGG16_Weights.DEFAULT)
+    path = get_correct_custom_model(sport_type, "ssd")
+
+    with open(path.parents[1] / "class_names.json", "r") as f:
+        sport_class_map = json.load(f)
+    class_names = {int(k): v for k, v in sport_class_map[sport_type].items()}
+
+    model = ssd300_vgg16(weights=None, num_classes=len(class_names))
+    checkpoint = torch.load(path, weights_only=False)
+    model.load_state_dict(checkpoint["model_state_dict"])
     model = model.to(device)
     model.eval()
 
@@ -56,9 +63,10 @@ def run_ssd_custom_videos(media_path, device):
                 labels = labels[mask].numpy()
 
                 for box, score, label in zip(boxes, scores, labels):
-                    x1, y1, x2, y2 = map(int, box)
-                    class_name = class_names.get(int(label), "Unknown")
-                    label_text = f"{class_name}: {score:.2f}"
+                    x1, y1, x2, y2 = map(int, box.tolist())
+                    class_id = int(label.item())
+                    class_name = class_names.get(class_id, "unknown")
+                    label_text = f"{class_name}: {score.item():.2f}"
 
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                     cv2.putText(
@@ -102,12 +110,17 @@ def run_ssd_custom_videos(media_path, device):
     print(results_data)
 
 
-def run_ssd_custom_images(media_path, device):
+def run_ssd_custom_images(media_path, device, sport_type, gui):
 
-    with open("./coco_classnames.json", "r") as f:
-        class_names = {int(v): k for k, v in json.load(f).items()}
+    path = get_correct_custom_model(sport_type, "ssd")
 
-    model = ssd300_vgg16(weights=SSD300_VGG16_Weights.DEFAULT)
+    with open(path.parents[1] / "class_names.json", "r") as f:
+        sport_class_map = json.load(f)
+    class_names = {int(k): v for k, v in sport_class_map[sport_type].items()}
+
+    model = ssd300_vgg16(weights=None, num_classes=len(class_names))
+    checkpoint = torch.load(path, weights_only=False)
+    model.load_state_dict(checkpoint["model_state_dict"])
     model = model.to(device)
     model.eval()
 
