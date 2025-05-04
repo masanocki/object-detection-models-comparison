@@ -10,6 +10,16 @@ from models.utils.helpers import *
 
 
 def run_yolo_custom_videos(model_name, media_path, device, sport_type, gui):
+
+    ### VISUALIZATION CHECKBOXES ###
+    enable_visualization = gui.enable_visualization_var.get()
+    show_boxes = gui.show_bounding_boxes_checkbox.get()
+    show_scores = gui.show_confidence_scores_checkbox.get()
+    show_labels = gui.show_labels_checkbox.get()
+    total_test_files = gui.total_files.get()
+    files_counter = 0
+    ###
+
     path = get_correct_custom_model(sport_type, model_name)
 
     model = YOLO(path).to(device)
@@ -23,6 +33,7 @@ def run_yolo_custom_videos(model_name, media_path, device, sport_type, gui):
 
         cap = cv2.VideoCapture(video)
         frame_count = 0
+        files_counter += 1
         frame_times = []
         start_time = time.time()
 
@@ -30,7 +41,7 @@ def run_yolo_custom_videos(model_name, media_path, device, sport_type, gui):
             ret, frame = cap.read()
             if ret:
                 frame_start_time = time.time()
-                results = model.track(frame, persist=True)
+                results = model.track(frame, persist=True, verbose=False)
 
                 if device == "cuda":
                     torch.cuda.synchronize()
@@ -42,24 +53,25 @@ def run_yolo_custom_videos(model_name, media_path, device, sport_type, gui):
                 current_video_time = time.time() - start_time
                 total_processing_time = time.time() - global_start_time
 
-                ### METRICS VISUALIZER UPDATE ###
-                if gui.metric_fps_checkbox.get():
-                    current_fps = 1 / frame_time if frame_time > 0 else 0
-                    gui.update_metric("FPS", f"{current_fps:.1f}")
+                ### PROGRESS VISUALIZER UPDATE ###
+                current_fps = 1 / frame_time if frame_time > 0 else 0
+                gui.update_progress("FPS", f"{current_fps:.1f}")
+                gui.update_progress(
+                    "Media Detection Time", f"{current_video_time:.1f} s"
+                )
+                gui.update_progress("Total Time", f"{total_processing_time:.1f} s")
+                gui.update_progress(
+                    "Processing Media", f"{files_counter}/{total_test_files}"
+                )
+                ###
 
-                if gui.metric_detection_time_checkbox.get():
-                    gui.update_metric(
-                        "Video Detection Time", f"{current_video_time:.1f} s"
+                if enable_visualization:
+                    annotated_frame = results[0].plot(
+                        boxes=show_boxes, labels=show_labels, conf=show_scores
                     )
-                    gui.update_metric("Total Time", f"{total_processing_time:.1f} s")
-                ### METRICS VISUALIZER UPDATE ###
+                    cv2.imshow(model_name, annotated_frame)
+                    cv2.waitKey(1)
 
-                annotated_frame = results[0].plot()
-
-                cv2.imshow(f"{model_name} Tracking", annotated_frame)
-
-                if cv2.waitKey(1) & 0xFF == ord("q"):
-                    break
             else:
                 break
         cap.release()
@@ -84,10 +96,20 @@ def run_yolo_custom_videos(model_name, media_path, device, sport_type, gui):
                 "frames_processed": frame_count,
             }
         )
+    gui._close_detection_screen()
     print(results_data)
 
 
 def run_yolo_custom_images(model_name, media_path, device, sport_type, gui):
+
+    ### VISUALIZATION CHECKBOXES ###
+    enable_visualization = gui.enable_visualization_var.get()
+    show_boxes = gui.show_bounding_boxes_checkbox.get()
+    show_scores = gui.show_confidence_scores_checkbox.get()
+    show_labels = gui.show_labels_checkbox.get()
+    total_test_files = int(gui.total_files.get()) - 1
+    ###
+
     path = get_correct_custom_model(sport_type, model_name)
 
     model = YOLO(path).to(device)
@@ -111,13 +133,20 @@ def run_yolo_custom_images(model_name, media_path, device, sport_type, gui):
 
         frame_time = time.time() - frame_start_time
         frame_times.append(frame_time)
+        total_processing_time = time.time() - start_time
         processed_count += 1
 
-        annotated_frame = results[0].plot()
+        ### PROGRESS VISUALIZER UPDATE ###
+        gui.update_progress("Total Time", f"{total_processing_time:.1f} s")
+        gui.update_progress("Processing Media", f"{processed_count}/{total_test_files}")
+        ###
 
-        cv2.imshow(f"{model_name} Detection", annotated_frame)
-
-        cv2.waitKey(1)
+        if enable_visualization:
+            annotated_frame = results[0].plot(
+                boxes=show_boxes, labels=show_labels, conf=show_scores
+            )
+            cv2.imshow(model_name, annotated_frame)
+            cv2.waitKey(1)
 
     cv2.destroyAllWindows()
     if device == "cuda":
@@ -136,5 +165,5 @@ def run_yolo_custom_images(model_name, media_path, device, sport_type, gui):
             "images_processed": processed_count,
         }
     )
-
+    gui._close_detection_screen()
     print(results_data)

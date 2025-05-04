@@ -17,6 +17,8 @@ def run_rtdetrv2_custom_videos(media_path, device, sport_type, gui):
     show_boxes = gui.show_bounding_boxes_checkbox.get()
     show_scores = gui.show_confidence_scores_checkbox.get()
     show_labels = gui.show_labels_checkbox.get()
+    total_test_files = gui.total_files.get()
+    files_counter = 0
     ###
 
     path = get_correct_custom_model(sport_type, "rtdetrv2")
@@ -26,12 +28,14 @@ def run_rtdetrv2_custom_videos(media_path, device, sport_type, gui):
     model.eval()
 
     results_data = []
+    global_start_time = time.time()
     for video in media_path.glob("*.avi"):
         if device == "cuda":
             torch.cuda.empty_cache()
 
         cap = cv2.VideoCapture(video)
         frame_count = 0
+        files_counter += 1
         frame_times = []
         start_time = time.time()
 
@@ -59,6 +63,21 @@ def run_rtdetrv2_custom_videos(media_path, device, sport_type, gui):
                 frame_time = time.time() - frame_start_time
                 frame_times.append(frame_time)
                 frame_count += 1
+
+                current_video_time = time.time() - start_time
+                total_processing_time = time.time() - global_start_time
+
+                ### PROGRESS VISUALIZER UPDATE ###
+                current_fps = 1 / frame_time if frame_time > 0 else 0
+                gui.update_progress("FPS", f"{current_fps:.1f}")
+                gui.update_progress(
+                    "Media Detection Time", f"{current_video_time:.1f} s"
+                )
+                gui.update_progress("Total Time", f"{total_processing_time:.1f} s")
+                gui.update_progress(
+                    "Processing Media", f"{files_counter}/{total_test_files}"
+                )
+                ###
 
                 ### VISUALIZATION SECTION ###
                 if enable_visualization:
@@ -101,6 +120,7 @@ def run_rtdetrv2_custom_videos(media_path, device, sport_type, gui):
                 "frames_processed": frame_count,
             }
         )
+    gui._close_detection_screen()
     print(results_data)
 
 
@@ -111,6 +131,7 @@ def run_rtdetrv2_custom_images(media_path, device, sport_type, gui):
     show_boxes = gui.show_bounding_boxes_checkbox.get()
     show_scores = gui.show_confidence_scores_checkbox.get()
     show_labels = gui.show_labels_checkbox.get()
+    total_test_files = int(gui.total_files.get()) - 1
     ###
 
     path = get_correct_custom_model(sport_type, "rtdetrv2")
@@ -148,7 +169,13 @@ def run_rtdetrv2_custom_images(media_path, device, sport_type, gui):
 
         frame_time = time.time() - frame_start_time
         frame_times.append(frame_time)
+        total_processing_time = time.time() - start_time
         processed_count += 1
+
+        ### PROGRESS VISUALIZER UPDATE ###
+        gui.update_progress("Total Time", f"{total_processing_time:.1f} s")
+        gui.update_progress("Processing Media", f"{processed_count}/{total_test_files}")
+        ###
 
         ### VISUALIZATION SECTION ###
         if enable_visualization:
@@ -185,4 +212,5 @@ def run_rtdetrv2_custom_images(media_path, device, sport_type, gui):
             "images_processed": processed_count,
         }
     )
+    gui._close_detection_screen()
     print(results_data)
