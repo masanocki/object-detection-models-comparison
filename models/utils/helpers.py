@@ -3,7 +3,7 @@ import cv2
 
 
 def get_correct_custom_model(sport_name, model_name):
-    if model_name == "yolo11" or model_name == "yolo12":
+    if model_name == "yolov11" or model_name == "yolov12":
         return (
             Path(__file__).resolve().parents[2]
             / "custom_models"
