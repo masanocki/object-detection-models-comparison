@@ -195,5 +195,9 @@ def run_yolo_custom_images(model_name, media_path, device, sport_type, gui):
             "device": device,
         }
     )
+    if gui.auto_save_checkbox.get():
+        calculate_yolo_results(model, model_name, sport_type, True)
+    else:
+        calculate_yolo_results(model, model_name, sport_type, False)
     gui._close_detection_screen()
     print(results_data)
