@@ -142,23 +142,25 @@ def run_yolo_coco_images(model_name, media_path, device, gui):
         torch.cuda.empty_cache()
 
     results_data = []
-    frame_times = []
-    start_time = time.time()
+    pure_frame_times = []
+    full_frame_times = []
     processed_count = 0
+    start_time = time.time()
 
     for image_path in media_path.glob("*.jpg"):
         image = cv2.imread(image_path)
 
-        frame_start_time = time.time()
-        results = model.predict(image)
+        pure_start_time = time.time()
+        results = model.predict(image, verbose=False)
 
         if device == "cuda":
             torch.cuda.synchronize()
 
-        frame_time = time.time() - frame_start_time
-        frame_times.append(frame_time)
-        total_processing_time = time.time() - start_time
+        pure_time = time.time() - pure_start_time
+        pure_frame_times.append(pure_time)
+
         processed_count += 1
+        total_processing_time = time.time() - start_time
 
         ### PROGRESS VISUALIZER UPDATE ###
         gui.update_progress("Total Time", f"{total_processing_time:.1f} s")
@@ -172,21 +174,31 @@ def run_yolo_coco_images(model_name, media_path, device, gui):
             cv2.imshow(model_name, annotated_frame)
             cv2.waitKey(1)
 
+        full_time = time.time() - pure_start_time
+        full_frame_times.append(full_time)
+
     cv2.destroyAllWindows()
     if device == "cuda":
         del results
         torch.cuda.empty_cache()
 
     total_time = time.time() - start_time
-    metrics = calculate_fps_and_time(frame_times, total_time, processed_count)
+
+    pure_metrics = calculate_fps_and_time(
+        pure_frame_times, sum(pure_frame_times), processed_count
+    )
+    full_metrics = calculate_fps_and_time(
+        full_frame_times, sum(full_frame_times), processed_count
+    )
 
     results_data.append(
         {
             "folder_path": media_path,
+            "gui_avg_image_time": full_metrics["avg_frame_time"],
+            "pure_avg_image_time": pure_metrics["avg_frame_time"],
             "total_detection_time": total_time,
-            "avg_image_time": metrics["avg_frame_time"],
-            "device": device,
             "images_processed": processed_count,
+            "device": device,
         }
     )
     gui._close_detection_screen()
