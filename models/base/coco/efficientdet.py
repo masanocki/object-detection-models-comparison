@@ -31,27 +31,35 @@ def run_efficientdet_coco_videos(media_path, device, gui):
     model.eval()
 
     torch.backends.cudnn.benchmark = True
+
     results_data = []
     global_start_time = time.time()
+
     for video in media_path.glob("*.avi"):
+
         if device == "cuda":
             torch.cuda.empty_cache()
+
         cap = cv2.VideoCapture(video)
         frame_count = 0
         files_counter += 1
-        frame_times = []
+        pure_frame_times = []
+        full_frame_times = []
         start_time = time.time()
 
         while cap.isOpened():
             ret, frame = cap.read()
             if ret:
+                full_start_time = time.time()
+
                 original_height, original_width = frame.shape[:2]
                 resized_frame = cv2.resize(frame, (512, 512))
                 rgb_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
                 input_tensor = (
                     to_tensor(rgb_frame).unsqueeze(0).to(device, non_blocking=True)
                 )
-                frame_start_time = time.time()
+
+                pure_start_time = time.time()
                 with torch.no_grad():
                     detections = model(input_tensor)
                     detections = detections[0].cpu()
@@ -59,15 +67,16 @@ def run_efficientdet_coco_videos(media_path, device, gui):
                 if device == "cuda":
                     torch.cuda.synchronize()
 
-                frame_time = time.time() - frame_start_time
-                frame_times.append(frame_time)
+                pure_time = time.time() - pure_start_time
+                pure_frame_times.append(pure_time)
+
                 frame_count += 1
 
                 current_video_time = time.time() - start_time
                 total_processing_time = time.time() - global_start_time
 
                 ### PROGRESS VISUALIZER UPDATE ###
-                current_fps = 1 / frame_time if frame_time > 0 else 0
+                current_fps = 1 / pure_time if pure_time > 0 else 0
                 gui.update_progress("FPS", f"{current_fps:.1f}")
                 gui.update_progress(
                     "Media Detection Time", f"{current_video_time:.1f} s"
@@ -114,6 +123,9 @@ def run_efficientdet_coco_videos(media_path, device, gui):
                     cv2.waitKey(1)
                 ###
 
+                full_time = time.time() - full_start_time
+                full_frame_times.append(full_time)
+
             else:
                 break
         cap.release()
@@ -125,20 +137,31 @@ def run_efficientdet_coco_videos(media_path, device, gui):
             torch.cuda.empty_cache()
 
         total_time = time.time() - start_time
-        metrics = calculate_fps_and_time(frame_times, total_time, frame_count)
+
+        pure_metrics = calculate_fps_and_time(
+            pure_frame_times, sum(pure_frame_times), frame_count
+        )
+        full_metrics = calculate_fps_and_time(
+            full_frame_times, sum(full_frame_times), frame_count
+        )
 
         results_data.append(
             {
                 "video_name": video.name,
-                "min_fps": metrics["min_fps"],
-                "avg_fps": metrics["avg_fps"],
-                "max_fps": metrics["max_fps"],
+                "pure_min_fps": pure_metrics["min_fps"],
+                "pure_avg_fps": pure_metrics["avg_fps"],
+                "pure_max_fps": pure_metrics["max_fps"],
+                "pure_avg_frame_time": pure_metrics["avg_frame_time"],
+                "gui_min_fps": full_metrics["min_fps"],
+                "gui_avg_fps": full_metrics["avg_fps"],
+                "gui_max_fps": full_metrics["max_fps"],
+                "gui_avg_frame_time": full_metrics["avg_frame_time"],
                 "total_detection_time": total_time,
-                "avg_frame_time": metrics["avg_frame_time"],
                 "device": device,
                 "frames_processed": frame_count,
             }
         )
+
     gui._close_detection_screen()
     print(results_data)
 
