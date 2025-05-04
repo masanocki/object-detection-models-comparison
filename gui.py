@@ -597,6 +597,7 @@ class GUI(ctk.CTk):
         self.det_window = ctk.CTkToplevel(self)
         self.det_window.title("Detection Statistics")
         self.det_window.geometry("800x600")
+        self.det_window.resizable(False, False)
 
         self.header_frame = ctk.CTkFrame(self.det_window)
         self.header_frame.pack(fill="x", padx=10, pady=5)
@@ -616,13 +617,9 @@ class GUI(ctk.CTk):
 
         metrics = [
             ("FPS", "N/A"),
-            ("Video Detection Time", "N/A"),
             ("Total Time", "N/A"),
-            ("Precision", "N/A"),
-            ("Recall", "N/A"),
-            ("F1 Score", "N/A"),
-            ("mAP", "N/A"),
-            ("IoU", "N/A"),
+            ("Processing Media", "N/A"),
+            ("Media Detection Time", "N/A"),
         ]
 
         for metric_name, initial_value in metrics:
@@ -647,7 +644,11 @@ class GUI(ctk.CTk):
 
         self.metric_labels[metric_name] = value_label
 
-    def update_metric(self, metric_name, value):
+    def _close_detection_screen(self):
+        self.det_window.destroy()
+        self.det_window.update()
+
+    def update_progress(self, metric_name, value):
         if metric_name in self.metric_labels:
             self.metric_labels[metric_name].configure(text=str(value))
 
