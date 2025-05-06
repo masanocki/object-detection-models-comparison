@@ -19,7 +19,7 @@ def calculate_fps_and_time(frame_times, total_time, frame_count):
 
 
 def calculate_yolo_results(model, model_name, sport_type, save):
-    save_path = Path(f"results/{model_name}/{sport_type}/eval_metrics.csv")
+    save_path = Path(f"results/{model_name}/custom/{sport_type}/eval_metrics.csv")
     save_path.parent.mkdir(parents=True, exist_ok=True)
 
     path = (
@@ -72,7 +72,7 @@ def calculate_yolo_results(model, model_name, sport_type, save):
 
 
 def calculate_torch_results(metric, class_names, model_name, sport_type, save):
-    save_path = Path(f"results/{model_name}/{sport_type}/eval_metrics.csv")
+    save_path = Path(f"results/{model_name}/custom/{sport_type}/eval_metrics.csv")
     save_path.parent.mkdir(parents=True, exist_ok=True)
 
     results = metric.compute()
@@ -140,7 +140,7 @@ def calculate_torch_results(metric, class_names, model_name, sport_type, save):
 
 
 def calculate_rtdetr_results(metric, model, model_name, sport_type, save):
-    save_path = Path(f"results/{model_name}/{sport_type}/eval_metrics.csv")
+    save_path = Path(f"results/{model_name}/custom/{sport_type}/eval_metrics.csv")
     save_path.parent.mkdir(parents=True, exist_ok=True)
 
     results = metric.compute()
