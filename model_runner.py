@@ -50,13 +50,13 @@ def run_detection(
 
     match (model_name, media_type, model_type):
         case ("yolov11", "videos", "coco"):
-            run_yolo_coco_videos(model_name, media_path, device, gui)
+            run_yolo_coco_videos(model_name, media_path, device, sport_type, gui)
         case ("yolov11", "images", "coco"):
-            run_yolo_coco_images(model_name, media_path, device, gui)
+            run_yolo_coco_images(model_name, media_path, device, sport_type, gui)
         case ("yolov12", "videos", "coco"):
-            run_yolo_coco_videos(model_name, media_path, device, gui)
+            run_yolo_coco_videos(model_name, media_path, device, sport_type, gui)
         case ("yolov12", "images", "coco"):
-            run_yolo_coco_images(model_name, media_path, device, gui)
+            run_yolo_coco_images(model_name, media_path, device, sport_type, gui)
 
         case ("yolov11", "videos", "custom"):
             run_yolo_custom_videos(model_name, media_path, device, sport_type, gui)
@@ -68,9 +68,9 @@ def run_detection(
             run_yolo_custom_images(model_name, media_path, device, sport_type, gui)
 
         case ("ssd", "videos", "coco"):
-            run_ssd_coco_videos(media_path, device, gui)
+            run_ssd_coco_videos(media_path, device, sport_type, gui)
         case ("ssd", "images", "coco"):
-            run_ssd_coco_images(media_path, device, gui)
+            run_ssd_coco_images(media_path, device, sport_type, gui)
 
         case ("ssd", "videos", "custom"):
             run_ssd_custom_videos(media_path, device, sport_type, gui)
@@ -78,9 +78,9 @@ def run_detection(
             run_ssd_custom_images(media_path, device, sport_type, gui)
 
         case ("efficientdet", "videos", "coco"):
-            run_efficientdet_coco_videos(media_path, device, gui)
+            run_efficientdet_coco_videos(media_path, device, sport_type, gui)
         case ("efficientdet", "images", "coco"):
-            run_efficientdet_coco_images(media_path, device, gui)
+            run_efficientdet_coco_images(media_path, device, sport_type, gui)
 
         case ("efficientdet", "videos", "custom"):
             run_efficientdet_custom_videos(media_path, device, sport_type, gui)
@@ -88,9 +88,9 @@ def run_detection(
             run_efficientdet_custom_images(media_path, device, sport_type, gui)
 
         case ("rt-detrv2", "videos", "coco"):
-            run_rtdetrv2_coco_videos(media_path, device, gui)
+            run_rtdetrv2_coco_videos(media_path, device, sport_type, gui)
         case ("rt-detrv2", "images", "coco"):
-            run_rtdetrv2_coco_images(media_path, device, gui)
+            run_rtdetrv2_coco_images(media_path, device, sport_type, gui)
 
         case ("rt-detrv2", "videos", "custom"):
             run_rtdetrv2_custom_videos(media_path, device, sport_type, gui)
