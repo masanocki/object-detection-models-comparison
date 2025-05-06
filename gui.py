@@ -327,7 +327,6 @@ class GUI(ctk.CTk):
                     self.metric_precision_checkbox,
                     self.metric_recall_checkbox,
                     self.metric_f1_checkbox,
-                    self.metric_iou_checkbox,
                     self.metric_map_checkbox,
                 ),
             ],
@@ -392,13 +391,6 @@ class GUI(ctk.CTk):
             font=ctk.CTkFont(size=15),
         )
         self.metric_map_checkbox.pack(padx=(20, 0), pady=5, anchor="w", side=ctk.LEFT)
-
-        self.metric_iou_checkbox = ctk.CTkCheckBox(
-            self.metrics_checkboxes_first_row,
-            text="IoU (Intersection over Union)",
-            font=ctk.CTkFont(size=15),
-        )
-        self.metric_iou_checkbox.pack(padx=(20, 0), pady=5, anchor="w", side=ctk.LEFT)
 
         self.metrics_checkboxes_second_row = ctk.CTkFrame(
             self.specification_box, fg_color="transparent"
@@ -691,7 +683,6 @@ class GUI(ctk.CTk):
         self.metric_recall_checkbox.select()
         self.metric_f1_checkbox.select()
         self.metric_map_checkbox.select()
-        self.metric_iou_checkbox.select()
         self.metric_detection_time_checkbox.select()
         self.metric_fps_checkbox.select()
         self.auto_save_checkbox.select()
