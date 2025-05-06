@@ -2,7 +2,6 @@ from pathlib import Path
 import csv
 import json
 import torch
-import pandas as pd
 
 
 def calculate_fps_and_time(frame_times, total_time, frame_count):
