@@ -6,6 +6,8 @@ import torch
 from effdet import DetBenchPredict, create_model
 from torchvision.ops import nms
 from torchvision.transforms.functional import to_tensor
+from torchmetrics.detection.mean_ap import MeanAveragePrecision
+from pycocotools.coco import COCO
 
 from models.utils.metrics import *
 
@@ -169,6 +171,10 @@ def run_efficientdet_custom_videos(media_path, device, sport_type, gui):
             }
         )
 
+    if gui.auto_save_checkbox.get():
+        save_performence_metrics(
+            results_data, "efficientdet", sport_type, "videos", "custom"
+        )
     gui._close_detection_screen()
     print(results_data)
 
@@ -200,6 +206,15 @@ def run_efficientdet_custom_images(media_path, device, sport_type, gui):
     if device == "cuda":
         torch.cuda.empty_cache()
 
+    ### FOR METRICS CALCULATION ###
+    coco = COCO(str(media_path / "_annotations.coco.json"))
+    id_to_filename = {img["id"]: img["file_name"] for img in coco.dataset["images"]}
+    filename_to_id = {v: k for k, v in id_to_filename.items()}
+    metric = MeanAveragePrecision(
+        iou_type="bbox", class_metrics=True, extended_summary=True
+    )
+    ###
+
     results_data = []
     pure_frame_times = []
     full_frame_times = []
@@ -207,6 +222,7 @@ def run_efficientdet_custom_images(media_path, device, sport_type, gui):
     start_time = time.time()
 
     for image_path in media_path.glob("*.jpg"):
+        img_name = image_path.name
         image = cv2.imread(image_path)
 
         full_start_time = time.time()
@@ -235,9 +251,9 @@ def run_efficientdet_custom_images(media_path, device, sport_type, gui):
         gui.update_progress("Processing Media", f"{processed_count}/{total_test_files}")
         ###
 
-        boxes = detections[:, :4].cpu()
-        scores = detections[:, 4].cpu()
-        labels = detections[:, 5].cpu()
+        boxes = detections[:, :4]
+        scores = detections[:, 4]
+        labels = detections[:, 5].int()
 
         confidence_threshold = 0.25
         keep = scores > confidence_threshold
@@ -254,6 +270,31 @@ def run_efficientdet_custom_images(media_path, device, sport_type, gui):
         scale_y = original_height / 512
         boxes[:, [0, 2]] *= scale_x
         boxes[:, [1, 3]] *= scale_y
+
+        ### METRICS CALCULATION ###
+        preds = [{"boxes": boxes, "scores": scores, "labels": labels}]
+
+        img_id = filename_to_id.get(img_name, None)
+        ann_ids = coco.getAnnIds(imgIds=[img_id])
+        anns = coco.loadAnns(ann_ids)
+
+        target_boxes = []
+        target_labels = []
+        for ann in anns:
+            bbox = ann["bbox"]
+            x1, y1, w, h = bbox
+            target_boxes.append([x1, y1, x1 + w, y1 + h])
+            target_labels.append(ann["category_id"])
+
+        if target_boxes:
+            targets = [
+                {
+                    "boxes": torch.tensor(target_boxes, dtype=torch.float32),
+                    "labels": torch.tensor(target_labels, dtype=torch.int64),
+                }
+            ]
+            metric.update(preds, targets)
+        ###
 
         ### VISUALIZATION SECTION ###
         if enable_visualization:
@@ -291,7 +332,7 @@ def run_efficientdet_custom_images(media_path, device, sport_type, gui):
 
     results_data.append(
         {
-            "folder_path": media_path,
+            "folder_path": str(media_path),
             "gui_avg_image_time": full_metrics["avg_frame_time"],
             "pure_avg_image_time": pure_metrics["avg_frame_time"],
             "total_detection_time": total_time,
@@ -299,5 +340,13 @@ def run_efficientdet_custom_images(media_path, device, sport_type, gui):
             "device": device,
         }
     )
+
+    if gui.auto_save_checkbox.get():
+        calculate_torch_results(metric, class_names, "efficientdet", sport_type, True)
+        save_performence_metrics(
+            results_data, "efficientdet", sport_type, "images", "custom"
+        )
+    else:
+        calculate_torch_results(metric, class_names, "efficientdet", sport_type, False)
     gui._close_detection_screen()
     print(results_data)

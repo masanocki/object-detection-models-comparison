@@ -4,6 +4,8 @@ import cv2
 import torch
 from PIL import Image
 from transformers import AutoModelForObjectDetection, AutoProcessor
+from torchmetrics.detection.mean_ap import MeanAveragePrecision
+from pycocotools.coco import COCO
 
 from models.utils.metrics import *
 
@@ -136,6 +138,10 @@ def run_rtdetrv2_custom_videos(media_path, device, sport_type, gui):
             }
         )
 
+    if gui.auto_save_checkbox.get():
+        save_performence_metrics(
+            results_data, "rtdetrv2", sport_type, "videos", "custom"
+        )
     gui._close_detection_screen()
     print(results_data)
 
@@ -158,6 +164,13 @@ def run_rtdetrv2_custom_images(media_path, device, sport_type, gui):
 
     if device == "cuda":
         torch.cuda.empty_cache()
+
+    coco = COCO(str(media_path / "_annotations.coco.json"))
+    id_to_filename = {img["id"]: img["file_name"] for img in coco.dataset["images"]}
+    filename_to_id = {v: k for k, v in id_to_filename.items()}
+    metric = MeanAveragePrecision(
+        iou_type="bbox", class_metrics=True, extended_summary=True
+    )
 
     results_data = []
     pure_frame_times = []
@@ -187,6 +200,36 @@ def run_rtdetrv2_custom_images(media_path, device, sport_type, gui):
         results = processor.post_process_object_detection(
             outputs, target_sizes=target_sizes
         )[0]
+
+        ### FOR METRICS CALCULATION ###
+        preds = [
+            {
+                "boxes": results["boxes"].cpu(),
+                "scores": results["scores"].cpu(),
+                "labels": results["labels"].cpu(),
+            }
+        ]
+
+        img_id = filename_to_id.get(image_path.name, None)
+        ann_ids = coco.getAnnIds(imgIds=[img_id])
+        anns = coco.loadAnns(ann_ids)
+
+        target_boxes = []
+        target_labels = []
+        for ann in anns:
+            x1, y1, w, h = ann["bbox"]
+            target_boxes.append([x1, y1, x1 + w, y1 + h])
+            target_labels.append(ann["category_id"])
+
+        if target_boxes:
+            targets = [
+                {
+                    "boxes": torch.tensor(target_boxes, dtype=torch.float32),
+                    "labels": torch.tensor(target_labels, dtype=torch.int64),
+                }
+            ]
+            metric.update(preds, targets)
+        ###
 
         processed_count += 1
         total_processing_time = time.time() - start_time
@@ -233,7 +276,7 @@ def run_rtdetrv2_custom_images(media_path, device, sport_type, gui):
 
     results_data.append(
         {
-            "folder_path": media_path,
+            "folder_path": str(media_path),
             "gui_avg_image_time": full_metrics["avg_frame_time"],
             "pure_avg_image_time": pure_metrics["avg_frame_time"],
             "total_detection_time": total_time,
@@ -241,5 +284,13 @@ def run_rtdetrv2_custom_images(media_path, device, sport_type, gui):
             "device": device,
         }
     )
+
+    if gui.auto_save_checkbox.get():
+        calculate_rtdetr_results(metric, model, "rtdetrv2", sport_type, True)
+        save_performence_metrics(
+            results_data, "rtdetrv2", sport_type, "images", "custom"
+        )
+    else:
+        calculate_rtdetr_results(metric, model, "rtdetrv2", sport_type, False)
     gui._close_detection_screen()
     print(results_data)

@@ -5,7 +5,9 @@ from pathlib import Path
 import cv2
 import torch
 from torchvision.models.detection import SSD300_VGG16_Weights, ssd300_vgg16
-from torchvision.transforms import functional as F
+from torchvision.transforms.functional import to_tensor
+from pycocotools.coco import COCO
+from torchmetrics.detection.mean_ap import MeanAveragePrecision
 
 from models.utils.metrics import *
 
@@ -55,7 +57,7 @@ def run_ssd_custom_videos(media_path, device, sport_type, gui):
                 full_start_time = time.time()
 
                 rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                image = F.to_tensor(rgb_frame).to(device)
+                image = to_tensor(rgb_frame).to(device)
 
                 pure_start_time = time.time()
                 with torch.no_grad():
@@ -149,6 +151,8 @@ def run_ssd_custom_videos(media_path, device, sport_type, gui):
             }
         )
 
+    if gui.auto_save_checkbox.get():
+        save_performence_metrics(results_data, "ssd", sport_type, "videos", "custom")
     gui._close_detection_screen()
     print(results_data)
 
@@ -178,6 +182,13 @@ def run_ssd_custom_images(media_path, device, sport_type, gui):
     if device == "cuda":
         torch.cuda.empty_cache()
 
+    coco = COCO(str(media_path / "_annotations.coco.json"))
+    id_to_filename = {img["id"]: img["file_name"] for img in coco.dataset["images"]}
+    filename_to_id = {v: k for k, v in id_to_filename.items()}
+    metric = MeanAveragePrecision(
+        iou_type="bbox", class_metrics=True, extended_summary=True
+    )
+
     results_data = []
     pure_frame_times = []
     full_frame_times = []
@@ -185,12 +196,13 @@ def run_ssd_custom_images(media_path, device, sport_type, gui):
     start_time = time.time()
 
     for image_path in media_path.glob("*.jpg"):
+        img_name = image_path.name
         image = cv2.imread(image_path)
 
         full_start_time = time.time()
 
         rgb_frame = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image_tensor = F.to_tensor(rgb_frame).to(device)
+        image_tensor = to_tensor(rgb_frame).to(device)
 
         pure_start_time = time.time()
         with torch.no_grad():
@@ -216,9 +228,32 @@ def run_ssd_custom_images(media_path, device, sport_type, gui):
 
         confidence_threshold = 0.5
         mask = scores > confidence_threshold
-        boxes = boxes[mask].numpy()
-        scores = scores[mask].numpy()
-        labels = labels[mask].numpy()
+        boxes = boxes[mask]
+        scores = scores[mask]
+        labels = labels[mask]
+
+        preds = [{"boxes": boxes, "scores": scores, "labels": labels}]
+
+        img_id = filename_to_id.get(img_name, None)
+        ann_ids = coco.getAnnIds(imgIds=[img_id])
+        anns = coco.loadAnns(ann_ids)
+
+        target_boxes = []
+        target_labels = []
+        for ann in anns:
+            bbox = ann["bbox"]
+            x1, y1, w, h = bbox
+            target_boxes.append([x1, y1, x1 + w, y1 + h])
+            target_labels.append(ann["category_id"])
+
+        if target_boxes:
+            targets = [
+                {
+                    "boxes": torch.tensor(target_boxes, dtype=torch.float32),
+                    "labels": torch.tensor(target_labels, dtype=torch.int64),
+                }
+            ]
+            metric.update(preds, targets)
 
         ### VISUALIZATION SECTION ###
         if enable_visualization:
@@ -256,7 +291,7 @@ def run_ssd_custom_images(media_path, device, sport_type, gui):
 
     results_data.append(
         {
-            "folder_path": media_path,
+            "folder_path": str(media_path),
             "gui_avg_image_time": full_metrics["avg_frame_time"],
             "pure_avg_image_time": pure_metrics["avg_frame_time"],
             "total_detection_time": total_time,
@@ -264,5 +299,10 @@ def run_ssd_custom_images(media_path, device, sport_type, gui):
             "device": device,
         }
     )
+    if gui.auto_save_checkbox.get():
+        calculate_torch_results(metric, class_names, "ssd", sport_type, True)
+        save_performence_metrics(results_data, "ssd", sport_type, "images", "custom")
+    else:
+        calculate_torch_results(metric, class_names, "ssd", sport_type, False)
     gui._close_detection_screen()
     print(results_data)

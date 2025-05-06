@@ -114,6 +114,10 @@ def run_yolo_custom_videos(model_name, media_path, device, sport_type, gui):
             }
         )
 
+    if gui.auto_save_checkbox.get():
+        save_performence_metrics(
+            results_data, model_name, sport_type, "videos", "custom"
+        )
     gui._close_detection_screen()
     print(results_data)
 
@@ -187,7 +191,7 @@ def run_yolo_custom_images(model_name, media_path, device, sport_type, gui):
 
     results_data.append(
         {
-            "folder_path": media_path,
+            "folder_path": str(media_path),
             "gui_avg_image_time": full_metrics["avg_frame_time"],
             "pure_avg_image_time": pure_metrics["avg_frame_time"],
             "total_detection_time": total_time,
@@ -197,6 +201,9 @@ def run_yolo_custom_images(model_name, media_path, device, sport_type, gui):
     )
     if gui.auto_save_checkbox.get():
         calculate_yolo_results(model, model_name, sport_type, True)
+        save_performence_metrics(
+            results_data, model_name, sport_type, "images", "custom"
+        )
     else:
         calculate_yolo_results(model, model_name, sport_type, False)
     gui._close_detection_screen()
