@@ -38,7 +38,6 @@ def load_media_files(
     precision_checkbox,
     recall_checkbox,
     f1_checkbox,
-    iou_checkbox,
     map_checkbox,
 ):
     media_files = []
@@ -78,7 +77,6 @@ def load_media_files(
         precision_checkbox,
         recall_checkbox,
         f1_checkbox,
-        iou_checkbox,
         map_checkbox,
         media_type.get(),
     )
@@ -184,7 +182,6 @@ def disable_unused_metrics_checkboxes(
     precision_checkbox,
     recall_checkbox,
     f1_checkbox,
-    iou_checkbox,
     map_checkbox,
     media_type,
 ):
@@ -198,9 +195,6 @@ def disable_unused_metrics_checkboxes(
         if f1_checkbox.cget("state") != ctk.DISABLED:
             f1_checkbox.deselect()
             f1_checkbox.configure(state=ctk.DISABLED)
-        if iou_checkbox.cget("state") != ctk.DISABLED:
-            iou_checkbox.deselect()
-            iou_checkbox.configure(state=ctk.DISABLED)
         if map_checkbox.cget("state") != ctk.DISABLED:
             map_checkbox.deselect()
             map_checkbox.configure(state=ctk.DISABLED)
@@ -222,9 +216,6 @@ def disable_unused_metrics_checkboxes(
         if f1_checkbox.cget("state") == ctk.DISABLED:
             f1_checkbox.configure(state=ctk.NORMAL)
             f1_checkbox.select()
-        if iou_checkbox.cget("state") == ctk.DISABLED:
-            iou_checkbox.configure(state=ctk.NORMAL)
-            iou_checkbox.select()
         if map_checkbox.cget("state") == ctk.DISABLED:
             map_checkbox.configure(state=ctk.NORMAL)
             map_checkbox.select()
