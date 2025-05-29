@@ -255,13 +255,13 @@ def run_efficientdet_custom_images(media_path, device, sport_type, gui):
         scores = detections[:, 4]
         labels = detections[:, 5].int()
 
-        confidence_threshold = 0.25
+        confidence_threshold = 0.1
         keep = scores > confidence_threshold
         boxes = boxes[keep]
         scores = scores[keep]
         labels = labels[keep]
 
-        keep = nms(boxes, scores, iou_threshold=0.5)
+        keep = nms(boxes, scores, iou_threshold=0.1)
         boxes = boxes[keep]
         scores = scores[keep]
         labels = labels[keep]
@@ -309,7 +309,7 @@ def run_efficientdet_custom_images(media_path, device, sport_type, gui):
                 image,
             )
             cv2.imshow("efficientdet", image)
-            cv2.waitKey(1)
+            cv2.waitKey(1000000)
         ###
 
         full_time = time.time() - full_start_time

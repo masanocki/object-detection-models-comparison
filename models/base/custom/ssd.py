@@ -1,10 +1,9 @@
 import json
 import time
-from pathlib import Path
 
 import cv2
 import torch
-from torchvision.models.detection import SSD300_VGG16_Weights, ssd300_vgg16
+from torchvision.models.detection import ssd300_vgg16
 from torchvision.transforms.functional import to_tensor
 from pycocotools.coco import COCO
 from torchmetrics.detection.mean_ap import MeanAveragePrecision

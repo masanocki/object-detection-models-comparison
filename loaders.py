@@ -1,6 +1,5 @@
 import json
 from pathlib import Path
-import pandas as pd
 import customtkinter as ctk
 from PIL import Image
 import cv2
@@ -57,9 +56,9 @@ def load_media_files(
             row_number += 1
         total_size_temp += file.stat().st_size
 
-    if media_files[1].endswith(".avi"):
+    if media_files[0].endswith(".avi"):
         media_type.set("videos")
-    elif media_files[1].endswith(".jpg"):
+    elif media_files[0].endswith(".jpg"):
         media_type.set("images")
     total_files.set(len(media_files))
     total_size.set(f"{total_size_temp} bytes")
