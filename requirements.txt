@@ -1,0 +1,12 @@
+customtkinter==5.2.2
+effdet==0.4.1
+opencv_contrib_python==4.11.0.86
+opencv_python==4.11.0.86
+Pillow==11.2.1
+py_cpuinfo==9.0.0
+pycocotools==2.0.8
+torch==2.6.0
+torchmetrics==1.7.2
+torchvision==0.21.0
+transformers==4.50.3
+ultralytics==8.3.100
