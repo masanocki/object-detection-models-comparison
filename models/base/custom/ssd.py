@@ -31,7 +31,12 @@ def run_ssd_custom_videos(media_path, device, sport_type, gui):
     class_names = {int(k): v for k, v in sport_class_map[sport_type].items()}
 
     model = ssd300_vgg16(weights=None, num_classes=len(class_names))
-    checkpoint = torch.load(path, weights_only=False)
+    if device != "cuda":
+        checkpoint = torch.load(
+            path, map_location=torch.device("cpu"), weights_only=False
+        )
+    else:
+        checkpoint = torch.load(path, weights_only=False)
     model.load_state_dict(checkpoint["model_state_dict"])
     model = model.to(device)
     model.eval()
@@ -173,7 +178,12 @@ def run_ssd_custom_images(media_path, device, sport_type, gui):
     class_names = {int(k): v for k, v in sport_class_map[sport_type].items()}
 
     model = ssd300_vgg16(weights=None, num_classes=len(class_names))
-    checkpoint = torch.load(path, weights_only=False)
+    if device != "cuda":
+        checkpoint = torch.load(
+            path, map_location=torch.device("cpu"), weights_only=False
+        )
+    else:
+        checkpoint = torch.load(path, weights_only=False)
     model.load_state_dict(checkpoint["model_state_dict"])
     model = model.to(device)
     model.eval()
@@ -225,11 +235,11 @@ def run_ssd_custom_images(media_path, device, sport_type, gui):
         scores = predictions[0]["scores"].cpu()
         labels = predictions[0]["labels"].cpu()
 
-        confidence_threshold = 0.5
-        mask = scores > confidence_threshold
-        boxes = boxes[mask]
-        scores = scores[mask]
-        labels = labels[mask]
+        # confidence_threshold = 0.5
+        # mask = scores > confidence_threshold
+        # boxes = boxes[mask]
+        # scores = scores[mask]
+        # labels = labels[mask]
 
         preds = [{"boxes": boxes, "scores": scores, "labels": labels}]
 

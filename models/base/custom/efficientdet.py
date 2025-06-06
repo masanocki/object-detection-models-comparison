@@ -34,7 +34,12 @@ def run_efficientdet_custom_videos(media_path, device, sport_type, gui):
     model = create_model(
         "tf_efficientdet_d0", pretrained=False, num_classes=len(class_names) - 1
     )
-    checkpoint = torch.load(path, weights_only=False)
+    if device != "cuda":
+        checkpoint = torch.load(
+            path, map_location=torch.device("cpu"), weights_only=False
+        )
+    else:
+        checkpoint = torch.load(path, weights_only=False)
     model.load_state_dict(checkpoint["state_dict"])
     model = DetBenchPredict(model).to(device)
     model.eval()
@@ -198,7 +203,12 @@ def run_efficientdet_custom_images(media_path, device, sport_type, gui):
     model = create_model(
         "tf_efficientdet_d0", pretrained=False, num_classes=len(class_names) - 1
     )
-    checkpoint = torch.load(path, weights_only=False)
+    if device != "cuda":
+        checkpoint = torch.load(
+            path, map_location=torch.device("cpu"), weights_only=False
+        )
+    else:
+        checkpoint = torch.load(path, weights_only=False)
     model.load_state_dict(checkpoint["state_dict"])
     model = DetBenchPredict(model).to(device)
     model.eval()
@@ -255,16 +265,16 @@ def run_efficientdet_custom_images(media_path, device, sport_type, gui):
         scores = detections[:, 4]
         labels = detections[:, 5].int()
 
-        confidence_threshold = 0.1
-        keep = scores > confidence_threshold
-        boxes = boxes[keep]
-        scores = scores[keep]
-        labels = labels[keep]
+        # confidence_threshold = 0.1
+        # keep = scores > confidence_threshold
+        # boxes = boxes[keep]
+        # scores = scores[keep]
+        # labels = labels[keep]
 
-        keep = nms(boxes, scores, iou_threshold=0.1)
-        boxes = boxes[keep]
-        scores = scores[keep]
-        labels = labels[keep]
+        # keep = nms(boxes, scores, iou_threshold=0.1)
+        # boxes = boxes[keep]
+        # scores = scores[keep]
+        # labels = labels[keep]
 
         scale_x = original_width / 512
         scale_y = original_height / 512
@@ -309,7 +319,7 @@ def run_efficientdet_custom_images(media_path, device, sport_type, gui):
                 image,
             )
             cv2.imshow("efficientdet", image)
-            cv2.waitKey(1000000)
+            cv2.waitKey(1)
         ###
 
         full_time = time.time() - full_start_time
