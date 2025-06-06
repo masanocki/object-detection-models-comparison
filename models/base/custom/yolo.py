@@ -39,6 +39,7 @@ def run_yolo_custom_videos(model_name, media_path, device, sport_type, gui):
         while cap.isOpened():
             ret, frame = cap.read()
             if ret:
+                frame = cv2.resize(frame, (640, 640))
                 pure_start_time = time.time()
                 results = model.track(frame, persist=True, verbose=False)
 
