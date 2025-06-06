@@ -1,6 +1,6 @@
-# Object Detection Models Comparison in Sport With Complex Motion Patterns
+# Object Detection Models Comparison in Sports With Complex Motion Patterns
 
-This project provides a ready-to-use platform for comparing object detection models in sports environments characterized by fast motion, occlusions, low lighting, and variable visual conditions. It includes an interactive desktop app built with CustomTkinter, allowing users to test preconfigured models on custom videos or images. Initial tests have already been conducted to verify model integration and performance under challenging visual conditions.
+This project provides a ready-to-use platform for comparing object detection models in sports environments characterized by fast motion, occlusions, low lighting, and variable visual conditions. It includes an interactive desktop app built with CustomTkinter, allowing users to test preconfigured models on custom videos or images. Initial tests have already been conducted to verify model integration and performance under challenging visual conditions, using sports such as skiing, kayaking, rugby, underwater hockey, and surfing.
 
 ---
 
