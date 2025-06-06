@@ -109,7 +109,12 @@ def calculate_torch_results(metric, class_names, model_name, sport_type, save):
     precision_matrix = results["precision"].mean(dim=(0, 1, 3, 4))
     recall_matrix = results["recall"].mean(dim=(0, 2, 3))
     map_per_class = results["map_per_class"]
+    if map_per_class.ndim == 0:
+        map_per_class = map_per_class.unsqueeze(0)
+
     class_ids = results["classes"]
+    if isinstance(class_ids, torch.Tensor):
+        class_ids = class_ids.view(-1).tolist()
 
     per_class_f1 = (
         2 * precision_matrix * recall_matrix / (precision_matrix + recall_matrix + 1e-6)
@@ -177,7 +182,12 @@ def calculate_rtdetr_results(metric, model, model_name, sport_type, save):
     precision_matrix = results["precision"].mean(dim=(0, 1, 3, 4))
     recall_matrix = results["recall"].mean(dim=(0, 2, 3))
     map_per_class = results["map_per_class"]
+    if map_per_class.ndim == 0:
+        map_per_class = map_per_class.unsqueeze(0)
+
     class_ids = results["classes"]
+    if isinstance(class_ids, torch.Tensor):
+        class_ids = class_ids.view(-1).tolist()
 
     per_class_f1 = (
         2 * precision_matrix * recall_matrix / (precision_matrix + recall_matrix + 1e-6)
